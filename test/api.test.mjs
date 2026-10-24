@@ -109,3 +109,16 @@ test("CSV cells that start with a formula character are neutralised", async () =
   const csv = await (await call("GET", "host/export", null, host)).text();
   assert.match(csv, /"'=x@evil\.co"/);
 });
+
+test("remote control: command needs the host key, deck reports, phone reads", async () => {
+  const { call } = mk();
+  assert.equal((await call("POST", "host/remote", { slide: 5 })).status, 401);
+  assert.equal((await call("POST", "remote/report", { slide: 3, total: 50 })).status, 200);
+  assert.equal((await call("POST", "remote/report", { slide: -1, total: 50 })).status, 400);
+  let s = await (await call("GET", "remote/state")).json();
+  assert.equal(s.slide, 3); assert.equal(s.total, 50); assert.equal(s.seq, 0);
+  assert.equal((await call("POST", "host/remote", { slide: 4 }, host)).status, 200);
+  s = await (await call("GET", "remote/state")).json();
+  assert.equal(s.seq, 1); assert.equal(s.cmd, 4); assert.equal(s.slide, 3);
+  assert.equal((await call("POST", "host/remote", { slide: 999 }, host)).status, 400);
+});

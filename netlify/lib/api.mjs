@@ -147,6 +147,20 @@ export async function handle(req, { store, hostKey }) {
       return json({ incomplete: false, ...result, emailSaved: Boolean(usr.email) });
     }
 
+    if (method === "GET" && path === "remote/state") {
+      const r = (await store.get("remote", { type: "json" })) || { slide: 0, total: 0, seq: 0, cmd: null };
+      return json({ slide: r.slide, total: r.total, seq: r.seq, cmd: r.cmd });
+    }
+
+    if (method === "POST" && path === "remote/report") {
+      const body = await readBody(req);
+      const slide = Number(body.slide), total = Number(body.total);
+      if (!Number.isInteger(slide) || slide < 0 || slide > 199 || !Number.isInteger(total) || total < 1 || total > 200) return json({ error: "Bad slide" }, 400);
+      const r = (await store.get("remote", { type: "json" })) || { seq: 0, cmd: null };
+      await store.setJSON("remote", { ...r, slide, total });
+      return json({ ok: true });
+    }
+
     if (path.startsWith("host/")) {
       if (!hostKey) return json({ error: "HOST_KEY is not set on the server." }, 503);
       if (!keyMatches(req.headers.get("x-host-key"), hostKey)) return json({ error: "Wrong host key." }, 401);
@@ -161,6 +175,16 @@ export async function handle(req, { store, hostKey }) {
         st.updatedAt = Date.now();
         await store.setJSON("state", st);
         return json(await publicState(store));
+      }
+
+      if (method === "POST" && sub === "remote") {
+        const body = await readBody(req);
+        const slide = Number(body.slide);
+        if (!Number.isInteger(slide) || slide < 0 || slide > 199) return json({ error: "Bad slide" }, 400);
+        const r = (await store.get("remote", { type: "json" })) || { slide: 0, total: 0, seq: 0, cmd: null };
+        r.seq = (r.seq || 0) + 1; r.cmd = slide;
+        await store.setJSON("remote", r);
+        return json({ ok: true, seq: r.seq, cmd: slide });
       }
 
       if (method === "POST" && sub === "reset") {
