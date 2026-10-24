@@ -211,7 +211,8 @@
   keyIn.addEventListener("keydown", function (e) { if (e.key === "Enter") { try { sessionStorage.setItem("fyz-host", keyIn.value); } catch (x) {} flash("Key saved for this tab."); keyIn.blur(); } });
 
   tick();
-  setInterval(tick, 1000);
+  // Poll every 2s while visible, every 10s if the tab is hidden.
+  (function loop() { setTimeout(function () { tick(); loop(); }, document.hidden ? 10000 : 2000); })();
 })();
 </script>
 </body>
