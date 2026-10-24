@@ -1,0 +1,16 @@
+{
+  "name": "drdata-events-presentations",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Event presentations and the live Find Your Zone audience quiz for Dr. Data Decision Intelligence.",
+  "scripts": {
+    "test": "node --test test/api.test.mjs"
+  },
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  },
+  "devDependencies": {
+    "qrcode-generator": "^1.4.4"
+  }
+}

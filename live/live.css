@@ -1,0 +1,22 @@
+:root {
+  --navy: #2d4459;
+  --teal: #3bbfbf;
+  --coral: #f05f57;
+  --cream: #fefaf5;
+  --slate: #7a8f95;
+  --ink: #1a1a1a;
+  --line: #e3ddd2;
+  --white: #ffffff;
+  --teal-soft: #dff4f4;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--cream); color: var(--ink); }
+body { font-family: "Inter", -apple-system, "Segoe UI", Roboto, Arial, sans-serif; line-height: 1.4; -webkit-text-size-adjust: 100%; }
+button { font: inherit; cursor: pointer; }
+a { color: var(--navy); }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img { width: 44px; height: 44px; display: block; }
+.brand .name { font-weight: 700; color: var(--navy); font-size: 15px; }
+.brand .tag { font-size: 11px; letter-spacing: 0.12em; color: var(--teal); font-weight: 600; text-transform: uppercase; }
+.sr { position: absolute; left: -9999px; }
+.warn { color: var(--coral); font-weight: 600; }

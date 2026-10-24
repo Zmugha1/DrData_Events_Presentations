@@ -1,0 +1,15 @@
+[build]
+  publish = "."
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/join"
+  to = "/live/join/index.html"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/screen"
+  to = "/live/screen/index.html"
+  status = 200
+  force = true
