@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find Your Zone | Join</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/live/live.css">
+<style>
+  .wrap { max-width: 560px; margin: 0 auto; padding: 16px 16px 40px; min-height: 100vh; display: flex; flex-direction: column; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 4px 0 16px; border-bottom: 1px solid var(--line); }
+  h1 { font-size: 22px; color: var(--navy); margin: 22px 0 6px; line-height: 1.2; }
+  .sub { color: var(--slate); font-size: 15px; margin-bottom: 18px; }
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: 14px; padding: 18px; margin-top: 14px; }
+  .qlabel { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--teal); font-weight: 700; }
+  .qtext { font-size: 20px; font-weight: 600; color: var(--navy); margin: 8px 0 16px; line-height: 1.3; }
+  .opt { display: flex; gap: 12px; align-items: flex-start; width: 100%; text-align: left; background: var(--white); border: 2px solid var(--line); border-radius: 12px; padding: 14px; margin-bottom: 10px; min-height: 56px; color: var(--ink); font-size: 16px; }
+  .opt .letter { flex: 0 0 28px; height: 28px; border-radius: 50%; background: var(--teal-soft); color: var(--navy); font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+  .opt:active { border-color: var(--teal); }
+  .opt[disabled] { cursor: default; }
+  .opt.chosen { border-color: var(--navy); background: var(--navy); color: var(--white); }
+  .opt.chosen .letter { background: var(--teal); color: var(--navy); }
+  .opt.dim { opacity: 0.45; }
+  .status { margin-top: 10px; font-size: 15px; color: var(--slate); }
+  .zone { font-size: 13px; letter-spacing: 0.12em; font-weight: 700; color: var(--teal); }
+  .head { font-size: 22px; font-weight: 700; color: var(--navy); margin: 8px 0 10px; line-height: 1.25; }
+  .body { font-size: 16px; color: var(--ink); }
+  .job { margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 15px; color: var(--slate); }
+  .job strong { display: block; color: var(--navy); font-size: 18px; margin-top: 2px; }
+  label.f { display: block; font-size: 14px; font-weight: 600; color: var(--navy); margin: 14px 0 6px; }
+  input[type=email] { width: 100%; font: inherit; font-size: 16px; padding: 13px; border: 2px solid var(--line); border-radius: 10px; background: var(--white); }
+  input[type=email]:focus { outline: none; border-color: var(--teal); }
+  .consent { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: var(--slate); margin: 12px 0; }
+  .consent input { margin-top: 3px; width: 20px; height: 20px; flex: 0 0 20px; }
+  .btn { display: block; width: 100%; text-align: center; text-decoration: none; background: var(--navy); color: var(--white); border: 0; border-radius: 12px; padding: 15px; font-weight: 600; font-size: 16px; }
+  .btn.alt { background: var(--white); color: var(--navy); border: 2px solid var(--navy); margin-top: 10px; }
+  .err { color: var(--coral); font-weight: 600; font-size: 14px; margin-top: 8px; min-height: 18px; }
+  .ok { color: var(--navy); font-weight: 600; margin-top: 8px; }
+  .small { font-size: 13px; color: var(--slate); margin-top: 18px; }
+  .banner { position: fixed; left: 0; right: 0; top: 0; background: var(--coral); color: var(--white); text-align: center; font-size: 14px; padding: 8px; display: none; }
+</style>
+</head>
+<body>
+<div class="banner" id="banner" role="status">Connection lost. Trying again.</div>
+<div class="wrap">
+  <header>
+    <div class="brand"><img src="/live/mascot.png" alt="Dr. Data mascot"><div><div class="name">Dr. Data Decision Intelligence</div><div class="tag">Data first. Decisions second. AI third.</div></div></div>
+  </header>
+  <main id="view" aria-live="polite"></main>
+  <p class="small">Your answers are anonymous unless you choose to add your email at the end.</p>
+</div>
+<script>
+(function () {
+  "use strict";
+  var view = document.getElementById("view");
+  var banner = document.getElementById("banner");
+  var LS = "fyz-live-v1";
+  var quiz = null, state = null, me = null, mine = {}, result = null, resultFor = null, resultBusy = false;
+  var LETTERS = "ABCDEFG";
+
+  function load() { try { var v = JSON.parse(localStorage.getItem(LS) || "null"); if (v) { me = v.me; mine = v.mine || {}; } } catch (e) {} }
+  function save() { try { localStorage.setItem(LS, JSON.stringify({ me: me, mine: mine })); } catch (e) {} }
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
+  function api(path, body) {
+    var opt = body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {};
+    return fetch("/api/live/" + path, opt).then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); });
+  }
+
+  function ensureJoined() {
+    if (me && me.sid === state.sid) return Promise.resolve();
+    mine = {}; result = null; resultFor = null;
+    return api("join", {}).then(function (j) { if (j.pid) { me = { sid: j.sid, pid: j.pid }; save(); } else { throw new Error(j.error || "Could not join"); } });
+  }
+
+  function header(title, sub) { var f = document.createDocumentFragment(); f.appendChild(el("h1", "", title)); if (sub) f.appendChild(el("p", "sub", sub)); return f; }
+
+  function renderWait(title, sub) {
+    view.replaceChildren(header(title, sub));
+  }
+
+  function renderQuestion(step) {
+    var q = quiz.questions[step];
+    var card = el("div", "card");
+    card.appendChild(el("div", "qlabel", "Question " + (step + 1) + " of " + quiz.questions.length));
+    card.appendChild(el("div", "qtext", q.q));
+    var chosen = mine[step];
+    q.opts.forEach(function (text, i) {
+      var b = el("button", "opt" + (chosen === i ? " chosen" : "") + (chosen !== undefined && chosen !== i ? " dim" : ""));
+      b.type = "button";
+      b.appendChild(el("span", "letter", LETTERS[i]));
+      b.appendChild(el("span", "", text));
+      if (chosen !== undefined) b.disabled = true;
+      b.addEventListener("click", function () { answer(step, i); });
+      card.appendChild(b);
+    });
+    card.appendChild(el("div", "status", chosen !== undefined ? "Answer received. Watch the screen for the room's results." : "Tap your answer."));
+    view.replaceChildren(card);
+  }
+
+  function answer(step, i) {
+    if (mine[step] !== undefined) return;
+    mine[step] = i; save(); renderQuestion(step);
+    api("answer", { sid: me.sid, pid: me.pid, q: step, opt: i }).then(function (j) {
+      if (j.code === "rejoin" || j.code === "session") { me = null; mine = {}; save(); tick(); return; }
+      if (j.code === "closed") { delete mine[step]; save(); tick(); return; }
+      if (j.locked && j.opt !== undefined) { mine[step] = j.opt; save(); }
+    }).catch(function () { delete mine[step]; save(); renderQuestion(step); });
+  }
+
+  function renderResult() {
+    var wrap = document.createDocumentFragment();
+    if (!result) { wrap.appendChild(header("Working out your zone", "One moment.")); view.replaceChildren(wrap); return; }
+    if (result.incomplete) {
+      var c0 = el("div", "card");
+      c0.appendChild(el("div", "qlabel", "Your zone"));
+      c0.appendChild(el("div", "head", "We need answers to the first seven questions to find your zone."));
+      c0.appendChild(el("p", "body", "You can take the full quiz in about three minutes."));
+      var a0 = el("a", "btn", "Take the full quiz"); a0.href = result.fullQuizUrl; a0.target = "_blank"; a0.rel = "noopener";
+      c0.appendChild(a0);
+      view.replaceChildren(c0); return;
+    }
+    var card = el("div", "card");
+    card.appendChild(el("div", "zone", result.zone));
+    card.appendChild(el("div", "head", result.head));
+    card.appendChild(el("p", "body", result.body));
+    var job = el("div", "job", "Your first job to hand off");
+    job.appendChild(el("strong", "", result.firstJob));
+    card.appendChild(job);
+    view.replaceChildren(card);
+
+    var form = el("div", "card");
+    if (result.emailSaved) {
+      form.appendChild(el("div", "ok", "Thank you. We will follow up personally."));
+    } else {
+      form.appendChild(el("div", "qtext", "Want a follow-up?"));
+      form.appendChild(el("p", "body", "Add your email and we will follow up with one practical next step for your first job."));
+      var lab = el("label", "f", "Email address"); lab.setAttribute("for", "em");
+      var inp = el("input"); inp.type = "email"; inp.id = "em"; inp.autocomplete = "email"; inp.inputMode = "email";
+      var cons = el("label", "consent"); var cb = el("input"); cb.type = "checkbox"; cb.id = "cb";
+      cons.appendChild(cb); cons.appendChild(el("span", "", "You may use my email and answers to follow up with me. I can ask to delete them anytime."));
+      var err = el("div", "err"); err.setAttribute("role", "alert");
+      var send = el("button", "btn", "Send me my follow-up"); send.type = "button";
+      send.addEventListener("click", function () {
+        err.textContent = ""; send.disabled = true;
+        api("result", { sid: me.sid, pid: me.pid, email: inp.value, consent: cb.checked }).then(function (j) {
+          send.disabled = false;
+          if (j.error) { err.textContent = j.error; return; }
+          result = j; renderResult();
+        }).catch(function () { send.disabled = false; err.textContent = "Could not send. Try again."; });
+      });
+      form.appendChild(lab); form.appendChild(inp); form.appendChild(cons); form.appendChild(err); form.appendChild(send);
+    }
+    view.appendChild(form);
+    var book = el("a", "btn alt", "Book a discovery call"); book.href = result.bookingUrl; book.target = "_blank"; book.rel = "noopener";
+    view.appendChild(book);
+  }
+
+  function fetchResult() {
+    if (resultBusy || resultFor === me.sid) return;
+    resultBusy = true;
+    api("result", { sid: me.sid, pid: me.pid }).then(function (j) {
+      resultBusy = false;
+      if (j.code === "rejoin" || j.code === "session") { me = null; mine = {}; save(); tick(); return; }
+      result = j; resultFor = me.sid; renderResult();
+    }).catch(function () { resultBusy = false; });
+  }
+
+  var lastKey = "";
+  function render() {
+    var s = state.step, key = s + ":" + (mine[s] === undefined ? "n" : mine[s]) + ":" + (result ? "r" + (result.emailSaved ? 1 : 0) : "x");
+    if (key === lastKey && s !== quiz.resultsStep) return;
+    lastKey = key;
+    if (s === -1) { renderWait("You are in.", "The first question is about to appear on the big screen and here."); return; }
+    if (s >= 0 && s < quiz.questions.length) { renderQuestion(s); return; }
+    if (s === quiz.resultsStep) { if (!result) { renderResult(); fetchResult(); } return; }
+  }
+
+  function tick() {
+    if (!quiz) { api("quiz").then(function (j) { quiz = j; tick(); }).catch(fail); return; }
+    api("state").then(function (st) {
+      banner.style.display = "none";
+      state = st;
+      return ensureJoined().then(render);
+    }).catch(fail);
+  }
+  function fail() { banner.style.display = "block"; }
+
+  load();
+  tick();
+  setInterval(tick, 1500);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Find Your Zone | Live screen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/live/live.css">
+<style>
+  html, body { height: 100%; overflow: hidden; }
+  .stage { height: 100vh; display: grid; grid-template-rows: auto 1fr auto; padding: 2.2vh 4vw 1.6vh; gap: 1.6vh; }
+  header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 1.4vh; }
+  header .brand img { width: 5.2vh; height: 5.2vh; }
+  header .brand .name { font-size: 2vh; }
+  header .brand .tag { font-size: 1.3vh; }
+  .joined { text-align: right; color: var(--navy); }
+  .joined b { font-size: 4vh; font-weight: 800; display: block; line-height: 1; }
+  .joined span { font-size: 1.6vh; color: var(--slate); text-transform: uppercase; letter-spacing: 0.1em; }
+  main { display: flex; flex-direction: column; justify-content: center; min-height: 0; }
+  .eyebrow { color: var(--teal); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; font-size: 2.2vh; }
+  h1.big { font-size: 7vh; color: var(--navy); line-height: 1.08; margin: 1vh 0 1.2vh; font-weight: 800; }
+  .qtext { font-size: 4.6vh; color: var(--navy); font-weight: 700; line-height: 1.2; margin: 1.2vh 0 3vh; max-width: 88vw; }
+  .opt { position: relative; display: grid; grid-template-columns: 6.4vh 1fr auto; align-items: center; gap: 2vh; border: 2px solid var(--line); background: var(--white); border-radius: 1.6vh; margin-bottom: 1.6vh; padding: 1.6vh 2vh; overflow: hidden; }
+  .opt .bar { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--teal-soft); transition: width 0.5s ease; z-index: 0; }
+  .opt.lead .bar { background: #b9e9e9; }
+  .opt > * { position: relative; z-index: 1; }
+  .opt .letter { width: 5.2vh; height: 5.2vh; border-radius: 50%; background: var(--navy); color: var(--white); font-weight: 800; font-size: 2.6vh; display: grid; place-items: center; }
+  .opt .t { font-size: 3vh; color: var(--ink); line-height: 1.25; }
+  .opt .n { font-size: 3.4vh; font-weight: 800; color: var(--navy); text-align: right; min-width: 14vh; }
+  .opt .n small { font-size: 2vh; font-weight: 600; color: var(--slate); margin-left: 0.8vh; }
+  .meta { color: var(--slate); font-size: 2.2vh; margin-top: 2vh; }
+  .lobby { display: grid; grid-template-columns: 1fr auto; gap: 6vw; align-items: center; }
+  .qr { background: var(--white); border: 2px solid var(--line); border-radius: 2vh; padding: 2.4vh; }
+  .qr svg { display: block; width: 44vh; height: 44vh; }
+  .url { font-size: 4vh; font-weight: 800; color: var(--navy); margin-top: 2vh; word-break: break-all; }
+  .zones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; margin-top: 2.4vh; }
+  .zcard { background: var(--white); border: 2px solid var(--line); border-radius: 2vh; padding: 3vh 2.4vw; }
+  .zcard .zn { font-size: 2.2vh; letter-spacing: 0.12em; font-weight: 700; color: var(--teal); }
+  .zcard .zc { font-size: 10vh; font-weight: 800; color: var(--navy); line-height: 1; margin: 1.2vh 0 0.4vh; }
+  .zcard .zp { font-size: 2.6vh; color: var(--slate); }
+  .zcard.top { border-color: var(--navy); }
+  .jobs { margin-top: 3vh; display: flex; flex-wrap: wrap; gap: 1.4vh 1.6vw; font-size: 2.6vh; color: var(--navy); }
+  .jobs span { background: var(--white); border: 2px solid var(--line); border-radius: 99px; padding: 0.8vh 1.8vh; }
+  .jobs b { font-weight: 800; }
+  footer { display: flex; align-items: center; justify-content: space-between; color: var(--slate); font-size: 1.6vh; min-height: 4vh; }
+  .ctl { display: flex; gap: 1vh; align-items: center; opacity: 0.0; transition: opacity 0.25s; }
+  .ctl.show, footer:hover .ctl { opacity: 1; }
+  .ctl button, .ctl input { font: inherit; font-size: 1.7vh; padding: 0.8vh 1.4vh; border-radius: 0.8vh; border: 1px solid var(--line); background: var(--white); color: var(--navy); }
+  .ctl button.go { background: var(--navy); color: var(--white); border-color: var(--navy); }
+  .msg { color: var(--coral); font-weight: 600; }
+  .hint { color: var(--slate); }
+</style>
+</head>
+<body>
+<div class="stage">
+  <header>
+    <div class="brand"><img src="/live/mascot.png" alt="Dr. Data mascot"><div><div class="name">Dr. Data Decision Intelligence</div><div class="tag">Find Your Zone, live</div></div></div>
+    <div class="joined"><b id="joined">0</b><span>joined</span></div>
+  </header>
+  <main id="main"></main>
+  <footer>
+    <div class="hint" id="hint">Press C for controls. Arrow keys move between questions.</div>
+    <div class="ctl" id="ctl">
+      <span class="msg" id="msg"></span>
+      <input id="key" type="password" placeholder="Host key" autocomplete="off" aria-label="Host key">
+      <button id="back" type="button">Back</button>
+      <button id="next" type="button" class="go">Next</button>
+      <button id="lobby" type="button">Lobby</button>
+      <button id="results" type="button">Results</button>
+      <button id="export" type="button">Export emails</button>
+      <button id="reset" type="button">New session</button>
+    </div>
+  </footer>
+</div>
+<script src="/live/qrcode.js"></script>
+<script>
+(function () {
+  "use strict";
+  var main = document.getElementById("main"), joinedEl = document.getElementById("joined");
+  var ctl = document.getElementById("ctl"), keyIn = document.getElementById("key"), msg = document.getElementById("msg");
+  var quiz = null, state = null, zones = null, hideT = null, lastSig = "";
+  var LETTERS = "ABCDEFG";
+  var joinUrl = location.origin + "/join";
+  try { keyIn.value = sessionStorage.getItem("fyz-host") || ""; } catch (e) {}
+
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
+  function getJSON(p, h) { return fetch("/api/live/" + p, { headers: h || {} }).then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); }); }
+  function post(p, body) { return fetch("/api/live/" + p, { method: "POST", headers: { "content-type": "application/json", "x-host-key": keyIn.value }, body: JSON.stringify(body || {}) }).then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); }); }
+  function flash(t) { msg.textContent = t; ctl.classList.add("show"); clearTimeout(hideT); hideT = setTimeout(function () { ctl.classList.remove("show"); msg.textContent = ""; }, 4000); }
+
+  function qrSvg(text) {
+    var qr = qrcode(0, "M"); qr.addData(text); qr.make();
+    var n = qr.getModuleCount(), m = 2, size = n + m * 2, d = "";
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qr.isDark(r, c)) d += "M" + (c + m) + " " + (r + m) + "h1v1h-1z";
+    var ns = "http://www.w3.org/2000/svg", s = document.createElementNS(ns, "svg");
+    s.setAttribute("viewBox", "0 0 " + size + " " + size); s.setAttribute("role", "img"); s.setAttribute("aria-label", "QR code to join the quiz");
+    var bg = document.createElementNS(ns, "rect"); bg.setAttribute("width", size); bg.setAttribute("height", size); bg.setAttribute("fill", "#ffffff"); s.appendChild(bg);
+    var p = document.createElementNS(ns, "path"); p.setAttribute("d", d); p.setAttribute("fill", "#2d4459"); p.setAttribute("shape-rendering", "crispEdges"); s.appendChild(p);
+    return s;
+  }
+
+  function renderLobby() {
+    var wrap = el("div", "lobby"), left = el("div");
+    left.appendChild(el("div", "eyebrow", "Join the quiz"));
+    left.appendChild(el("h1", "big", "Scan to find your zone"));
+    left.appendChild(el("p", "meta", "Twelve questions. Answer on your phone. Results appear here as the room answers."));
+    left.appendChild(el("div", "url", joinUrl.replace(/^https?:\/\//, "")));
+    var qrBox = el("div", "qr"); qrBox.appendChild(qrSvg(joinUrl));
+    wrap.appendChild(left); wrap.appendChild(qrBox);
+    main.replaceChildren(wrap);
+  }
+
+  function renderQuestion() {
+    var s = state.step, q = quiz.questions[s], counts = state.counts || [], total = counts.reduce(function (a, b) { return a + b; }, 0);
+    var max = Math.max.apply(null, counts.concat([0]));
+    var frag = document.createDocumentFragment();
+    frag.appendChild(el("div", "eyebrow", "Question " + (s + 1) + " of " + quiz.questions.length + (q.part === 2 ? "  |  To tailor your result" : "")));
+    frag.appendChild(el("div", "qtext", q.q));
+    q.opts.forEach(function (t, i) {
+      var row = el("div", "opt" + (max > 0 && counts[i] === max ? " lead" : ""));
+      var bar = el("div", "bar"); bar.style.width = total ? Math.round((counts[i] / total) * 100) + "%" : "0%";
+      row.appendChild(bar);
+      row.appendChild(el("div", "letter", LETTERS[i]));
+      row.appendChild(el("div", "t", t));
+      var n = el("div", "n", String(counts[i] || 0)); n.appendChild(el("small", "", total ? Math.round(((counts[i] || 0) / total) * 100) + "%" : "0%"));
+      row.appendChild(n);
+      frag.appendChild(row);
+    });
+    frag.appendChild(el("div", "meta", total + " of " + state.joined + " answered"));
+    main.replaceChildren(frag);
+  }
+
+  function renderResults() {
+    var frag = document.createDocumentFragment();
+    frag.appendChild(el("div", "eyebrow", "The room"));
+    frag.appendChild(el("h1", "big", "Where the room landed"));
+    var z = zones || { zones: { below: 0, inside: 0, above: 0 }, complete: 0, joined: state.joined, jobs: {}, emails: 0 };
+    var order = ["below", "inside", "above"], names = { below: "BELOW THE ZONE", inside: "INSIDE THE ZONE", above: "ABOVE THE ZONE" };
+    var max = Math.max(z.zones.below, z.zones.inside, z.zones.above);
+    var grid = el("div", "zones");
+    order.forEach(function (k) {
+      var c = el("div", "zcard" + (max > 0 && z.zones[k] === max ? " top" : ""));
+      c.appendChild(el("div", "zn", names[k]));
+      c.appendChild(el("div", "zc", String(z.zones[k])));
+      c.appendChild(el("div", "zp", z.complete ? Math.round((z.zones[k] / z.complete) * 100) + "% of " + z.complete + " who finished" : "Waiting for results"));
+      grid.appendChild(c);
+    });
+    frag.appendChild(grid);
+    var jobs = el("div", "jobs");
+    Object.keys(z.jobs || {}).sort(function (a, b) { return z.jobs[b] - z.jobs[a]; }).forEach(function (j) {
+      var s = el("span"); s.appendChild(el("b", "", String(z.jobs[j]))); s.appendChild(document.createTextNode("  " + j)); jobs.appendChild(s);
+    });
+    if (Object.keys(z.jobs || {}).length) { frag.appendChild(el("div", "meta", "First job to hand off")); frag.appendChild(jobs); }
+    frag.appendChild(el("div", "meta", "Each person sees their own zone on their own phone."));
+    main.replaceChildren(frag);
+  }
+
+  function render() {
+    var sig = JSON.stringify([state.step, state.counts, state.joined, state.answered, zones && zones.zones, zones && zones.jobs, zones && zones.complete]);
+    joinedEl.textContent = String(state.joined);
+    if (sig === lastSig) return; lastSig = sig;
+    if (state.step === -1) renderLobby();
+    else if (state.step === quiz.resultsStep) renderResults();
+    else renderQuestion();
+  }
+
+  function tick() {
+    if (!quiz) { getJSON("quiz").then(function (j) { quiz = j; tick(); }); return; }
+    getJSON("state").then(function (s) {
+      state = s;
+      if (s.step === quiz.resultsStep && keyIn.value) {
+        return getJSON("host/zones", { "x-host-key": keyIn.value }).then(function (z) { if (!z.error) zones = z; render(); });
+      }
+      render();
+    }).catch(function () {});
+  }
+
+  function go(step) {
+    if (!keyIn.value) { flash("Enter the host key."); return; }
+    try { sessionStorage.setItem("fyz-host", keyIn.value); } catch (e) {}
+    post("host/goto", { step: step }).then(function (j) {
+      if (j.error) { flash(j.error); return; }
+      state = j; if (j.step !== quiz.resultsStep) zones = null; lastSig = ""; render(); tick();
+    });
+  }
+  function cur() { return state ? state.step : -1; }
+  document.getElementById("next").onclick = function () { go(Math.min(cur() + 1, quiz.resultsStep)); };
+  document.getElementById("back").onclick = function () { go(Math.max(cur() - 1, -1)); };
+  document.getElementById("lobby").onclick = function () { go(-1); };
+  document.getElementById("results").onclick = function () { go(quiz.resultsStep); };
+  document.getElementById("reset").onclick = function () {
+    if (!keyIn.value) { flash("Enter the host key."); return; }
+    if (!confirm("Start a new session? Everyone must rejoin and the current answers are closed.")) return;
+    post("host/reset").then(function (j) { if (j.error) { flash(j.error); return; } zones = null; state = j; lastSig = ""; render(); });
+  };
+  document.getElementById("export").onclick = function () {
+    if (!keyIn.value) { flash("Enter the host key."); return; }
+    fetch("/api/live/host/export", { headers: { "x-host-key": keyIn.value } }).then(function (r) {
+      if (!r.ok) return r.json().then(function (j) { flash(j.error || "Export failed"); });
+      return r.blob().then(function (b) { var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "find-your-zone-emails.csv"; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000); });
+    });
+  };
+  document.addEventListener("keydown", function (e) {
+    if (e.target === keyIn) return;
+    if (e.key === "c" || e.key === "C") { ctl.classList.toggle("show"); }
+    else if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); document.getElementById("next").click(); }
+    else if (e.key === "ArrowLeft") { document.getElementById("back").click(); }
+  });
+  keyIn.addEventListener("keydown", function (e) { if (e.key === "Enter") { try { sessionStorage.setItem("fyz-host", keyIn.value); } catch (x) {} flash("Key saved for this tab."); keyIn.blur(); } });
+
+  tick();
+  setInterval(tick, 1000);
+})();
+</script>
+</body>
+</html>
