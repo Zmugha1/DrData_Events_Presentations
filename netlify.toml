@@ -13,3 +13,9 @@
   to = "/live/screen/index.html"
   status = 200
   force = true
+
+[[redirects]]
+  from = "/notes"
+  to = "/notes/index.html"
+  status = 200
+  force = true
