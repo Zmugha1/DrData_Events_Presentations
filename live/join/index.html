@@ -189,7 +189,15 @@
 
   load();
   tick();
-  setInterval(tick, 1500);
+  // Polling is the main cost on Netlify. Poll every 3s, every 5s once this phone has
+  // answered the current question, and every 12s while the tab is hidden.
+  function delay() {
+    if (document.hidden) return 12000;
+    if (state && state.step >= 0 && state.step < state.resultsStep && mine[state.step] !== undefined) return 5000;
+    return 3000;
+  }
+  (function loop() { setTimeout(function () { tick(); loop(); }, delay()); })();
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) tick(); });
 })();
 </script>
 </body>
