@@ -35,9 +35,10 @@
   .qr { background: var(--white); border: 2px solid var(--line); border-radius: 2vh; padding: 2.4vh; }
   .qr svg { display: block; width: 44vh; height: 44vh; }
   .url { font-size: 4vh; font-weight: 800; color: var(--navy); margin-top: 2vh; word-break: break-all; }
-  .zones { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2vw; margin-top: 2.4vh; }
+  .zones { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2vw; margin-top: 2.4vh; }
   .zcard { background: var(--white); border: 2px solid var(--line); border-radius: 2vh; padding: 3vh 2.4vw; }
   .zcard .zn { font-size: 2.2vh; letter-spacing: 0.12em; font-weight: 700; color: var(--teal); }
+  .zcard .zm { font-size: 2.2vh; font-weight: 600; color: var(--navy); margin-top: 0.6vh; }
   .zcard .zc { font-size: 10vh; font-weight: 800; color: var(--navy); line-height: 1; margin: 1.2vh 0 0.4vh; }
   .zcard .zp { font-size: 2.6vh; color: var(--slate); }
   .zcard.top { border-color: var(--navy); }
@@ -136,15 +137,16 @@
     var frag = document.createDocumentFragment();
     frag.appendChild(el("div", "eyebrow", "The room"));
     frag.appendChild(el("h1", "big", "Where the room landed"));
-    var z = zones || { zones: { below: 0, inside: 0, above: 0 }, complete: 0, joined: state.joined, jobs: {}, emails: 0 };
-    var order = ["below", "inside", "above"], names = { below: "BELOW THE ZONE", inside: "INSIDE THE ZONE", above: "ABOVE THE ZONE" };
-    var max = Math.max(z.zones.below, z.zones.inside, z.zones.above);
+    var z = zones || { zones: { below: 0, inside: 0, above: 0, oscillating: 0 }, complete: 0, joined: state.joined, jobs: {}, emails: 0 };
+    var order = ["below", "inside", "above", "oscillating"], names = { below: "BELOW THE ZONE", inside: "INSIDE THE ZONE", above: "ABOVE THE ZONE", oscillating: "OSCILLATING" }, modes = { below: "Encode", inside: "Assist", above: "Research", oscillating: "Learn" };
+    var max = Math.max(z.zones.below, z.zones.inside, z.zones.above, z.zones.oscillating || 0);
     var grid = el("div", "zones");
     order.forEach(function (k) {
       var c = el("div", "zcard" + (max > 0 && z.zones[k] === max ? " top" : ""));
       c.appendChild(el("div", "zn", names[k]));
-      c.appendChild(el("div", "zc", String(z.zones[k])));
-      c.appendChild(el("div", "zp", z.complete ? Math.round((z.zones[k] / z.complete) * 100) + "% of " + z.complete + " who finished" : "Waiting for results"));
+      c.appendChild(el("div", "zm", "Mode: " + modes[k]));
+      c.appendChild(el("div", "zc", String(z.zones[k] || 0)));
+      c.appendChild(el("div", "zp", z.complete ? Math.round(((z.zones[k] || 0) / z.complete) * 100) + "% of " + z.complete + " who finished" : "Waiting for results"));
       grid.appendChild(c);
     });
     frag.appendChild(grid);
@@ -152,8 +154,8 @@
     Object.keys(z.jobs || {}).sort(function (a, b) { return z.jobs[b] - z.jobs[a]; }).forEach(function (j) {
       var s = el("span"); s.appendChild(el("b", "", String(z.jobs[j]))); s.appendChild(document.createTextNode("  " + j)); jobs.appendChild(s);
     });
-    if (Object.keys(z.jobs || {}).length) { frag.appendChild(el("div", "meta", "First job to hand off")); frag.appendChild(jobs); }
-    frag.appendChild(el("div", "meta", "Each person sees their own zone on their own phone."));
+    if (Object.keys(z.jobs || {}).length) { frag.appendChild(el("div", "meta", "First job to automate, for people Below the Zone")); frag.appendChild(jobs); }
+    frag.appendChild(el("div", "meta", "Work rarely sits in one Zone. Each person sees their own Zone and mix on their own phone."));
     main.replaceChildren(frag);
   }
 

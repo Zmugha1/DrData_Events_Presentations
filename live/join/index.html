@@ -115,19 +115,28 @@
     if (result.incomplete) {
       var c0 = el("div", "card");
       c0.appendChild(el("div", "qlabel", "Your zone"));
-      c0.appendChild(el("div", "head", "We need answers to the first seven questions to find your zone."));
+      c0.appendChild(el("div", "head", "We need answers to the first eight questions to find your Zone."));
       c0.appendChild(el("p", "body", "You can take the full quiz in about three minutes."));
       var a0 = el("a", "btn", "Take the full quiz"); a0.href = result.fullQuizUrl; a0.target = "_blank"; a0.rel = "noopener";
       c0.appendChild(a0);
       view.replaceChildren(c0); return;
     }
     var card = el("div", "card");
-    card.appendChild(el("div", "zone", result.zone));
+    card.appendChild(el("div", "zone", result.zone + "  ·  Mode: " + result.mode));
     card.appendChild(el("div", "head", result.head));
     card.appendChild(el("p", "body", result.body));
-    var job = el("div", "job", "Your first job to hand off");
-    job.appendChild(el("strong", "", result.firstJob));
-    card.appendChild(job);
+    var ai = el("div", "job", "What AI should do here");
+    ai.appendChild(el("strong", "", result.ai));
+    card.appendChild(ai);
+    var step = el("div", "job", "Your first step");
+    step.appendChild(el("strong", "", result.step));
+    card.appendChild(step);
+    if (result.mix) {
+      var names = { below: "Below", inside: "Inside", above: "Above", oscillating: "Oscillating" };
+      var mixEl = el("div", "job", "Your Zone mix");
+      mixEl.appendChild(el("strong", "", ["below", "inside", "above", "oscillating"].map(function (k) { return names[k] + " " + (result.mix[k] || 0); }).join("  ·  ")));
+      card.appendChild(mixEl);
+    }
     view.replaceChildren(card);
 
     var form = el("div", "card");
@@ -135,7 +144,7 @@
       form.appendChild(el("div", "ok", "Thank you. We will follow up personally."));
     } else {
       form.appendChild(el("div", "qtext", "Want a follow-up?"));
-      form.appendChild(el("p", "body", "Add your email and we will follow up with one practical next step for your first job."));
+      form.appendChild(el("p", "body", "Add your email and we will follow up with one practical next step."));
       var lab = el("label", "f", "Email address"); lab.setAttribute("for", "em");
       var inp = el("input"); inp.type = "email"; inp.id = "em"; inp.autocomplete = "email"; inp.inputMode = "email";
       var cons = el("label", "consent"); var cb = el("input"); cb.type = "checkbox"; cb.id = "cb";
