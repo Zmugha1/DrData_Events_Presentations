@@ -1,171 +1,150 @@
 // Find Your Zone quiz: questions, scoring and result copy.
 // Mirrors the public quiz at drdatadecisionintelligence.com/find-your-zone/.
-// Score flags per option: i = inside points, b = below points, a = above points.
+// Four Zones and their modes: Below/Encode, Inside/Assist, Above/Research, Oscillating/Learn.
 
+// Answer order is rotated by question number, the same as the public quiz,
+// so the Inside answer is not always first. Each scored answer carries one zone tag.
 export const QUESTIONS = [
   {
-    key: "prep", part: 1, label: "How your work gets done",
-    q: "Think about getting ready for an important client meeting, estimate, or session. How does it happen right now?",
-    opts: [
-      { t: "AI prepares everything automatically: I just open it", i: 2 },
-      { t: "I use AI to help but I still do most of the work manually", b: 1 },
-      { t: "I do it manually from scratch every time", b: 2 },
-      { t: "I usually wing it or skip preparation entirely", b: 3 },
-    ],
+    key: "prep", part: 1, label: "How you work with AI",
+    q: "Think about routine preparation: a meeting, a review, an estimate. How does it get done?",
+    opts: [{ t: "AI prepares it from my own checklist. I review and go.", z: "inside" }, { t: "I do it by hand, and I could write down the exact steps.", z: "below" }, { t: "I ask AI to do it. I could not list the steps myself.", z: "above" }, { t: "I am still learning it. I do some myself and compare with what AI gives me.", z: "oscillating" }],
   },
   {
-    key: "follow-up", part: 1, label: "How your work gets done",
-    q: "When you follow up after a meeting, how long does a good follow-up email take you?",
-    opts: [
-      { t: "Under 5 minutes: I have a system that handles most of it", i: 2 },
-      { t: "10 to 20 minutes: I have a rough process", b: 1 },
-      { t: "30 to 45 minutes: I write every one from scratch", b: 2 },
-      { t: "Longer than that: or I often forget to send one at all", b: 3 },
-    ],
+    key: "messages", part: 1, label: "How you work with AI",
+    q: "How do you write routine messages and follow-ups?",
+    opts: [{ t: "I write each one from scratch, even though I follow the same pattern every time.", z: "below" }, { t: "AI writes them and I mostly send what it gives me.", z: "above" }, { t: "I use AI drafts to learn what works, and I am building my own templates.", z: "oscillating" }, { t: "AI drafts them from my templates and rules. I approve and send.", z: "inside" }],
   },
   {
-    key: "proposal", part: 1, label: "How your work gets done",
-    q: "When someone asks for your services, how long does it take to send the proposal or quote?",
-    opts: [
-      { t: "Same day: my system drafts it and I review and send", i: 2 },
-      { t: "Next day: I have a template I customize", b: 1 },
-      { t: "2 to 5 days: I write it from scratch each time", b: 2 },
-      { t: "Longer than that: or I put it off and lose the momentum", b: 3 },
-    ],
+    key: "reports", part: 1, label: "How you work with AI",
+    q: "How do you produce reports, proposals, or quotes?",
+    opts: [{ t: "I depend on AI for the parts I do not know how to do.", z: "above" }, { t: "I own some parts now. Others I still hand to AI while I learn.", z: "oscillating" }, { t: "My system drafts them with my rules. I review the judgment calls.", z: "inside" }, { t: "I build each one by hand from a format I know well.", z: "below" }],
   },
   {
-    key: "content", part: 1, label: "How your work gets done",
-    q: "How do you create content today, like LinkedIn posts, blog articles, or newsletters?",
-    opts: [
-      { t: "Consistently: AI drafts in my voice and I refine", i: 2 },
-      { t: "Occasionally: when I have time to sit down and write", b: 1 },
-      { t: "Rarely: I know I should but it takes too long", b: 2 },
-      { t: "Almost never: I do not have a process for this at all", b: 3 },
-    ],
+    key: "rules", part: 1, label: "How you work with AI",
+    q: "Could you write down the rules you follow for your routine work?",
+    opts: [{ t: "For some tasks yes. For others I am still working them out.", z: "oscillating" }, { t: "Yes, and AI already follows them.", z: "inside" }, { t: "Yes, but I still apply them by hand.", z: "below" }, { t: "Not really. AI fills in what I do not know.", z: "above" }],
   },
   {
-    key: "voice", part: 1, label: "How your work gets done",
-    q: "When AI does a job for you, does the result sound like you: your reasoning, your voice, your standard?",
-    opts: [
-      { t: "Yes: I have built prompts that capture how I think", i: 2 },
-      { t: "Sometimes: when I put real effort into the request", b: 1 },
-      { t: "Rarely: it usually sounds like generic AI", b: 2 },
-      { t: "I have never thought to make it sound like me", b: 3 },
-    ],
+    key: "standard", part: 1, label: "How you work with AI",
+    q: "Does AI output meet your standard?",
+    opts: [{ t: "Yes. It uses my voice, my reasoning, and my standard.", z: "inside" }, { t: "I barely use AI. I do the work myself to keep my standard.", z: "below" }, { t: "I cannot always tell whether it is right.", z: "above" }, { t: "More and more, as I learn what good looks like.", z: "oscillating" }],
   },
   {
-    key: "check", part: 1, label: "How your work gets done",
-    q: "When AI produces something for you, how often do you check whether it did the job right?",
-    opts: [
-      { t: "Always: I interrogate every output before acting on it", i: 1 },
-      { t: "Most of the time: I skim it then usually accept", a: 1 },
-      { t: "Sometimes: only if something looks obviously off", a: 1 },
-      { t: "Rarely: if it looks plausible I move on", a: 3 },
-    ],
+    key: "check", part: 1, label: "How you work with AI",
+    q: "When AI gives you an answer, how do you check it?",
+    opts: [{ t: "I rarely need to. I do the work myself.", z: "below" }, { t: "If it looks plausible, I use it.", z: "above" }, { t: "Carefully, because I am still learning the topic.", z: "oscillating" }, { t: "Against a standard I know, every time.", z: "inside" }],
   },
   {
-    key: "boundary", part: 1, label: "How your work gets done",
-    q: "Is there a clear line between what AI handles and what only you decide?",
-    opts: [
-      { t: "Yes: I have drawn that line and AI respects it", i: 2 },
-      { t: "Roughly: I have a sense of it but it is not defined", b: 1 },
-      { t: "Not really: it depends on how I feel that day", a: 1 },
-      { t: "I have not thought about where that line should be", b: 2 },
-    ],
+    key: "line", part: 1, label: "How you work with AI",
+    q: "Where is the line between what AI handles and what you decide?",
+    opts: [{ t: "AI often makes calls I am not qualified to check.", z: "above" }, { t: "The line keeps moving as I learn more.", z: "oscillating" }, { t: "Clear. AI handles the routine. I make the judgment calls.", z: "inside" }, { t: "AI does very little. I do every step and make every call.", z: "below" }],
   },
   {
-    key: "size", part: 2, label: "Five quick questions to tailor your result",
-    q: "How many people work in your business?",
-    opts: [{ t: "1 to 4" }, { t: "5 to 9" }, { t: "10 to 35" }, { t: "36 to 50" }, { t: "More than 50" }],
+    key: "research", part: 1, label: "How you work with AI",
+    q: "When you need to work outside your expertise, how do you use AI?",
+    opts: [{ t: "I use it to learn the topic, and I am starting to make calls on my own.", z: "oscillating" }, { t: "For cited research. Then I decide.", z: "inside" }, { t: "I rarely leave my expertise. Most of my work is routine.", z: "below" }, { t: "AI is my main source and I act on its answers.", z: "above" }],
   },
   {
-    key: "role", part: 2, label: "Five quick questions to tailor your result",
-    q: "What is your role?",
-    opts: [{ t: "Owner or principal" }, { t: "Manager" }, { t: "Team member" }],
+    key: "work", part: 2, label: "Four quick questions about your work",
+    q: "What kind of work do you do?",
+    opts: [{ t: "Trades and field operations" }, { t: "Legal" }, { t: "Accounting and finance" }, { t: "Health and wellness" }, { t: "Real estate" }, { t: "Coaching and consulting" }, { t: "Education and training" }, { t: "Other" }],
   },
   {
-    key: "industry", part: 2, label: "Five quick questions to tailor your result",
-    q: "Which best describes your work?",
-    opts: [
-      { t: "Trades and construction" }, { t: "Legal" }, { t: "Accounting and finance" },
-      { t: "Health and wellness practice" }, { t: "Real estate" }, { t: "Coaching and consulting" }, { t: "Other" },
-    ],
+    key: "team", part: 2, label: "Four quick questions about your work",
+    q: "How many people on your team use AI or will soon?",
+    opts: [{ t: "Just me" }, { t: "2 to 9" }, { t: "10 to 50" }, { t: "More than 50" }],
   },
   {
-    key: "decision", part: 2, label: "Five quick questions to tailor your result",
-    q: "Which decision costs you the most when it goes wrong?",
-    opts: [
-      { t: "Pricing and quotes" }, { t: "Which leads to follow up" }, { t: "Scheduling and capacity" },
-      { t: "Client intake" }, { t: "Something else" },
-    ],
+    key: "systems", part: 2, label: "Four quick questions about your work",
+    q: "How many systems hold the information you work with?",
+    opts: [{ t: "1 to 2" }, { t: "3 to 6" }, { t: "7 or more" }],
   },
   {
-    key: "info", part: 2, label: "Five quick questions to tailor your result",
-    q: "What kind of information does your business hold?",
+    key: "info", part: 2, label: "Four quick questions about your work",
+    q: "What kind of information do you handle?",
     opts: [{ t: "Client or patient records" }, { t: "Pricing and proprietary methods" }, { t: "General business records" }],
   },
 ];
 
-export const JOB_KEYS = ["prep", "follow-up", "proposal", "content"];
+export const ZONE_ORDER = ["below", "inside", "above", "oscillating"];
+// Ties go to the riskier zone first: Above, Oscillating, Below, Inside.
+export const TIE_ORDER = ["above", "oscillating", "below", "inside"];
+
+export const JOB_KEYS = ["prep", "messages", "reports"];
 export const JOB_NAMES = {
-  prep: "Meeting preparation",
-  "follow-up": "Follow-up emails",
-  proposal: "Proposals and quotes",
-  content: "Content",
+  prep: "Preparation",
+  messages: "Messages and follow-ups",
+  reports: "Reports, proposals, and quotes",
 };
-export const JOB_FALLBACK = "Consistency across all four jobs";
+export const JOB_FALLBACK = "Your most repeated task";
 
 export const ZONES = {
   below: {
     zone: "BELOW THE ZONE",
+    mode: "Encode",
     head: "Your expertise is spending time on execution.",
-    body: "A lot of your week goes to work a well-built system can prepare for you: getting ready for meetings, writing follow-ups, turning around proposals, keeping up with content. Each of these can run on your rules and in your voice. Start with one job.",
-  },
-  above: {
-    zone: "ABOVE THE ZONE",
-    head: "You are using AI. Now teach it how you think.",
-    body: "AI is already doing work for you, running on generic instructions. The output goes out without your judgment and your voice, and over time that costs trust. The next step is capturing how you decide, so the system works the way you would.",
+    body: "You know the rules for much of your work, and you still apply them by hand. That work can run on your rules, in your voice, with your approval where it matters.",
+    ai: "Run your stated rules. Draft. Wait for your approval on anything that matters.",
+    step: "Write down the rules for one job: {job}. That list is what gets automated.",
   },
   inside: {
     zone: "INSIDE THE ZONE",
-    head: "You have the right instinct. Now make it consistent.",
-    body: "You know where AI helps and where your judgment decides. The next step is making that line hold across every core job, even in your busiest weeks.",
+    mode: "Assist",
+    head: "You and AI work in harmony.",
+    body: "The routine is handled. Your judgment is protected. You know where AI helps and where you decide.",
+    ai: "Gather inputs, draft, and show you similar past cases. You make the call.",
+    step: "Keep the line holding across every job, even in your busiest weeks. Check the one job where it slips.",
+  },
+  above: {
+    zone: "ABOVE THE ZONE",
+    mode: "Research",
+    head: "You are relying on AI for knowledge you do not have yet.",
+    body: "That is a fair use of AI, as long as you can see its sources and its uncertainty. The risk is acting on answers you cannot check.",
+    ai: "Bring cited sources. State what it does not know. Flag when a specialist is needed.",
+    step: "Pick the one topic you rely on AI for most. Ask for sources every time, and decide yourself.",
+  },
+  oscillating: {
+    zone: "OSCILLATING",
+    mode: "Learn",
+    head: "You are growing into the work.",
+    body: "Some days you decide. Some days you lean on AI. That is what learning looks like. The goal is for your choices to hold steady.",
+    ai: "Show its reasoning, the rule, and worked examples. Ask you to decide and say why.",
+    step: "Choose one task you are learning. Make the call first, then compare with AI. Track where you agree.",
   },
 };
 
 export const BOOKING_URL = "https://calendar.app.google/fMyQVRXz3Q2C4yxcA";
 export const FULL_QUIZ_URL = "https://drdatadecisionintelligence.com/find-your-zone/";
-export const SCORED_QUESTIONS = 7; // Q1 to Q7 carry the score
+export const SCORED_QUESTIONS = 8; // Q1 to Q8 carry the score
 
 export function publicQuestions() {
   return QUESTIONS.map((q) => ({ key: q.key, part: q.part, label: q.label, q: q.q, opts: q.opts.map((o) => o.t) }));
 }
 
+// Counts the scored answers by zone.
 export function scoreAnswers(answers) {
-  let b = 0, a = 0, i = 0;
+  const counts = { below: 0, inside: 0, above: 0, oscillating: 0 };
   for (let n = 0; n < SCORED_QUESTIONS; n++) {
     const opt = QUESTIONS[n].opts[answers[n]];
-    if (!opt) continue;
-    b += opt.b ?? 0;
-    a += opt.a ?? 0;
-    i += opt.i ?? 0;
+    if (opt && opt.z) counts[opt.z]++;
   }
-  return { b, a, i };
+  return counts;
 }
 
-export function zoneFor(t) {
-  if (t.a >= 3) return "above";
-  if (t.b <= 4 && t.i >= 4) return "inside";
-  return "below";
+// The zone with the most answers wins. Ties go to the riskier zone.
+export function zoneFor(counts) {
+  let best = TIE_ORDER[0];
+  for (const z of TIE_ORDER) if (counts[z] > counts[best]) best = z;
+  return best;
 }
 
+// The first of the three job questions answered Below.
 export function firstJobFor(answers) {
-  let best = null, bestScore = 0;
   for (let n = 0; n < JOB_KEYS.length; n++) {
-    const s = QUESTIONS[n].opts[answers[n]]?.b ?? 0;
-    if (s > bestScore) { bestScore = s; best = JOB_KEYS[n]; }
+    if (QUESTIONS[n].opts[answers[n]]?.z === "below") return JOB_NAMES[JOB_KEYS[n]];
   }
-  return best ? JOB_NAMES[best] : JOB_FALLBACK;
+  return JOB_FALLBACK;
 }
 
 export function hasScoredAnswers(answers) {
@@ -175,7 +154,9 @@ export function hasScoredAnswers(answers) {
 
 export function computeResult(answers) {
   if (!hasScoredAnswers(answers)) return null;
-  const totals = scoreAnswers(answers);
-  const key = zoneFor(totals);
-  return { zoneKey: key, ...ZONES[key], firstJob: firstJobFor(answers), bookingUrl: BOOKING_URL };
+  const mix = scoreAnswers(answers);
+  const key = zoneFor(mix);
+  const firstJob = firstJobFor(answers);
+  const z = ZONES[key];
+  return { zoneKey: key, zone: z.zone, mode: z.mode, head: z.head, body: z.body, ai: z.ai, step: z.step.replace("{job}", firstJob), firstJob, mix, bookingUrl: BOOKING_URL };
 }

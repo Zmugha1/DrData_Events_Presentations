@@ -196,7 +196,7 @@ export async function handle(req, { store, hostKey }) {
       if (method === "GET" && sub === "zones") {
         const st = await getState(store);
         const people = await allParticipants(store, st.sid);
-        const zones = { below: 0, inside: 0, above: 0 };
+        const zones = { below: 0, inside: 0, above: 0, oscillating: 0 };
         const jobs = {};
         let complete = 0, emails = 0;
         for (const p of people) {
@@ -207,19 +207,19 @@ export async function handle(req, { store, hostKey }) {
           const job = firstJobFor(p.answers);
           jobs[job] = (jobs[job] ?? 0) + 1;
         }
-        return json({ joined: people.length, complete, emails, zones, jobs, names: Object.fromEntries(Object.entries(ZONES).map(([k, v]) => [k, v.zone])) });
+        return json({ joined: people.length, complete, emails, zones, jobs, names: Object.fromEntries(Object.entries(ZONES).map(([k, v]) => [k, v.zone])), modes: Object.fromEntries(Object.entries(ZONES).map(([k, v]) => [k, v.mode])) });
       }
 
       if (method === "GET" && sub === "export") {
         const st = await getState(store);
         const people = await allParticipants(store, st.sid);
-        const header = ["email", "consent", "zone", "first_job", ...QUESTIONS.map((q) => q.key)];
+        const header = ["email", "consent", "zone", "mode", "first_job", ...QUESTIONS.map((q) => q.key)];
         const lines = [header.map(csvCell).join(",")];
         for (const p of people) {
           if (!p.email || !p.consent) continue;
           const r = computeResult(p.answers);
           const answers = QUESTIONS.map((q, n) => (p.answers[n] !== undefined ? q.opts[p.answers[n]].t : ""));
-          lines.push([p.email, "yes", r ? r.zone : "incomplete", r ? r.firstJob : "", ...answers].map(csvCell).join(","));
+          lines.push([p.email, "yes", r ? r.zone : "incomplete", r ? r.mode : "", r ? r.firstJob : "", ...answers].map(csvCell).join(","));
         }
         return new Response(lines.join("\n") + "\n", {
           status: 200,
