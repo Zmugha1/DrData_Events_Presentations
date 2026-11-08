@@ -13,6 +13,9 @@ const MAX_PARTICIPANTS = 500;
 const MAX_BODY = 5000;
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+// How long a reported deck position counts as the current session.
+const REMOTE_FRESH_MS = 30 * 60 * 1000;
+
 function json(data, status = 200) {
   return new Response(JSON.stringify(data), {
     status,
@@ -149,15 +152,20 @@ export async function handle(req, { store, hostKey }) {
 
     if (method === "GET" && path === "remote/state") {
       const r = (await store.get("remote", { type: "json" })) || { slide: 0, total: 0, seq: 0, cmd: null };
-      return json({ slide: r.slide, total: r.total, seq: r.seq, cmd: r.cmd });
+      // A position older than REMOTE_FRESH_MS is from an earlier session. The notes page starts at slide 1 instead.
+      const fresh = Number.isFinite(r.at) && Date.now() - r.at < REMOTE_FRESH_MS;
+      return json({ slide: r.slide, total: r.total, seq: r.seq, cmd: r.cmd, fresh });
     }
 
     if (method === "POST" && path === "remote/report") {
+      // Only the deck, holding the host key, may report its slide.
+      if (!hostKey) return json({ error: "HOST_KEY is not set on the server." }, 503);
+      if (!keyMatches(req.headers.get("x-host-key"), hostKey)) return json({ error: "Wrong host key." }, 401);
       const body = await readBody(req);
       const slide = Number(body.slide), total = Number(body.total);
       if (!Number.isInteger(slide) || slide < 0 || slide > 199 || !Number.isInteger(total) || total < 1 || total > 200) return json({ error: "Bad slide" }, 400);
       const r = (await store.get("remote", { type: "json" })) || { seq: 0, cmd: null };
-      await store.setJSON("remote", { ...r, slide, total });
+      await store.setJSON("remote", { ...r, slide, total, at: Date.now() });
       return json({ ok: true });
     }
 
