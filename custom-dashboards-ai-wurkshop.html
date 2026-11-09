@@ -161,10 +161,11 @@ addEventListener('hashchange',()=>{const n=(parseInt(location.hash.slice(1))||1)
 const RK='fyz-notes-key',REM=new URLSearchParams(location.search).get('remote')==='1';let key='';try{key=localStorage.getItem(RK)||''}catch(e){}
 let bc=null;try{bc=new BroadcastChannel('cd-deck');bc.onmessage=e=>{const d=e.data||{};if(d.hello)bc.postMessage({slide:i});if(typeof d.goto==='number')show(d.goto)}}catch(e){}
 function report(){if(bc){try{bc.postMessage({slide:i})}catch(e){}}if(REM&&key)fetch('/api/live/remote/report',{method:'POST',headers:{'content-type':'application/json','x-host-key':key},body:JSON.stringify({slide:i,total:S.length})}).then(r=>{const b=document.getElementById('rstat');if(b)b.textContent=r.ok?'Remote on':(r.status===401?'Wrong host key':'Remote error')}).catch(()=>{})}
-let seq=null;function poll(){if(!REM||!key||document.hidden)return;fetch('/api/live/remote/state',{cache:'no-store'}).then(r=>r.json()).then(st=>{if(seq===null){seq=st.seq;return}if(st.seq!==seq){seq=st.seq;if(typeof st.cmd==='number'&&st.cmd!==i)show(st.cmd)}}).catch(()=>{})}
+let seq=null;function poll(){if(document.hidden)return;fetch('/api/live/remote/state',{cache:'no-store'}).then(r=>r.json()).then(st=>{if(seq===null){seq=st.seq;return}if(st.seq!==seq){seq=st.seq;if(typeof st.cmd==='number'&&st.cmd!==i)show(st.cmd)}}).catch(()=>{})}
 const _show=show;show=function(n){_show(n);report()};
 if(REM){const kb=document.getElementById('keybox');if(!key)kb.style.display='flex';document.getElementById('rstat').style.display='block';
 document.getElementById('ksave').addEventListener('click',e=>{e.stopPropagation();key=document.getElementById('kin').value.trim();try{localStorage.setItem(RK,key)}catch(x){}kb.style.display='none';report()});
-kb.addEventListener('click',e=>e.stopPropagation());setInterval(poll,1200);setInterval(report,60000)}
+kb.addEventListener('click',e=>e.stopPropagation());setInterval(report,60000)}
+setInterval(poll,1000);
 addEventListener('resize',fit);fit();show((parseInt(location.hash.slice(1))||1)-1);
 </script></body></html>
