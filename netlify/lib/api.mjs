@@ -150,6 +150,23 @@ export async function handle(req, { store, hostKey }) {
       return json({ incomplete: false, ...result, emailSaved: Boolean(usr.email) });
     }
 
+    // Custom Dashboards deck remote. No host key by request: anyone with the notes link can move this deck.
+    // Separate from the MKE SPIN remote, which keeps its host key.
+    if (method === "GET" && path === "deck/state") {
+      const r = (await store.get("remote-cd", { type: "json" })) || { seq: 0, cmd: null };
+      return json({ seq: r.seq, cmd: r.cmd });
+    }
+
+    if (method === "POST" && path === "deck/goto") {
+      const body = await readBody(req);
+      const slide = Number(body.slide);
+      if (!Number.isInteger(slide) || slide < 0 || slide > 199) return json({ error: "Bad slide" }, 400);
+      const r = (await store.get("remote-cd", { type: "json" })) || { seq: 0, cmd: null };
+      r.seq = (r.seq || 0) + 1; r.cmd = slide;
+      await store.setJSON("remote-cd", r);
+      return json({ ok: true, seq: r.seq, cmd: slide });
+    }
+
     if (method === "GET" && path === "remote/state") {
       const r = (await store.get("remote", { type: "json" })) || { slide: 0, total: 0, seq: 0, cmd: null };
       // A position older than REMOTE_FRESH_MS is from an earlier session. The notes page starts at slide 1 instead.
