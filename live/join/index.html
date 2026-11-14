@@ -91,11 +91,11 @@
       b.type = "button";
       b.appendChild(el("span", "letter", LETTERS[i]));
       b.appendChild(el("span", "", text));
-      if (chosen !== undefined || state.frozen) b.disabled = true;
+      if (chosen !== undefined) b.disabled = true;
       b.addEventListener("click", function () { answer(step, i); });
       card.appendChild(b);
     });
-    card.appendChild(el("div", "status", chosen !== undefined ? "Answer received. Watch the screen for the room's results." : (state.frozen ? "Answers are closed for this question. The next one is coming." : "Tap your answer.")));
+    card.appendChild(el("div", "status", chosen !== undefined ? "Answer received. Watch the screen for the room's results." : "Tap your answer."));
     view.replaceChildren(card);
   }
 

@@ -52,12 +52,7 @@
   .ctl button.go { background: var(--navy); color: var(--white); border-color: var(--navy); }
   .msg { color: var(--coral); font-weight: 600; }
   .hint { color: var(--slate); }
-  body.qmode .ctl { opacity: 1; }
-  body.qmode #back, body.qmode #next, body.qmode #lobby, body.qmode #results, body.qmode #export, body.qmode #reset, body.qmode #hint { display: none; }
-  #freeze { font-weight: 700; }
-  body.qmode #freeze { font-size: 2.2vh; padding: 1.2vh 2.8vh; }
-  body.frozen #freeze { background: #F05F57; color: #fff; border-color: #F05F57; }
-  .closed { color: #F05F57; font-weight: 700; }
+    body.qmode footer { display: none; }
 </style>
 </head>
 <body>
@@ -74,7 +69,6 @@
       <input id="key" type="hidden">
       <button id="back" type="button">Back</button>
       <button id="next" type="button" class="go">Next</button>
-      <button id="freeze" type="button">Close answers</button>
       <button id="lobby" type="button">Lobby</button>
       <button id="results" type="button">Results</button>
       <button id="export" type="button">Export emails</button>
@@ -136,7 +130,7 @@
       row.appendChild(n);
       frag.appendChild(row);
     });
-    frag.appendChild(el("div", "meta" + (state.frozen ? " closed" : ""), total + " of " + state.joined + " answered" + (state.frozen ? ". Answers closed." : "")));
+    frag.appendChild(el("div", "meta", total + " of " + state.joined + " answered"));
     main.replaceChildren(frag);
   }
 
@@ -167,11 +161,8 @@
   }
 
   function render() {
-    var sig = JSON.stringify([state.step, state.frozen, state.counts, state.joined, state.answered, zones && zones.zones, zones && zones.jobs, zones && zones.complete]);
+    var sig = JSON.stringify([state.step, state.counts, state.joined, state.answered, zones && zones.zones, zones && zones.jobs, zones && zones.complete]);
     joinedEl.textContent = String(state.joined);
-    document.body.classList.toggle("frozen", Boolean(state.frozen));
-    document.getElementById("freeze").style.display = (document.body.classList.contains("qmode") && !(state.step >= 0 && state.step < quiz.resultsStep)) ? "none" : "";
-    document.getElementById("freeze").textContent = state.frozen ? "Open answers" : "Close answers";
     if (sig === lastSig) return; lastSig = sig;
     if (state.step === -1) renderLobby();
     else if (state.step === quiz.resultsStep) renderResults();
@@ -222,9 +213,6 @@
   // Embedded in the deck: no host key, no hint, no reset or export. Arrow keys still move the quiz.
   try { if (window.self !== window.top) { ["key", "reset", "export", "hint"].forEach(function (id) { var n = document.getElementById(id); if (n) n.style.display = "none"; }); } } catch (e) {}
 
-  document.getElementById("freeze").onclick = function () {
-    post("host/freeze", { frozen: !(state && state.frozen) }).then(function (j) { if (j.error) { flash(j.error); return; } state = j; lastSig = ""; render(); });
-  };
   // Deck mode: /screen?at=N sits on one slide. N is a question (0 to 11) or the results step (12).
   // The quiz moves to N when this slide becomes the active slide, so the deck's own arrows drive the quiz.
   var AT = (function () { var m = /[?&]at=(\d+)/.exec(location.search); return m ? Number(m[1]) : null; })();
@@ -241,13 +229,10 @@
       wasActive = a;
     }, 300);
     document.addEventListener("keydown", function (e) {
-      if (e.key === "f" || e.key === "F") { document.getElementById("freeze").click(); return; }
       if (!deck) return;
       if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); e.stopImmediatePropagation(); deck.next(); }
       else if (e.key === "ArrowLeft") { e.preventDefault(); e.stopImmediatePropagation(); deck.prev(); }
     }, true);
-    // Clicking the frame gives it focus, so hand focus back to the deck after a button click.
-    document.getElementById("freeze").addEventListener("click", function () { try { window.parent.focus(); } catch (e) {} });
   }
 
   tick();

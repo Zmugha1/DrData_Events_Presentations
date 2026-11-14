@@ -73,11 +73,11 @@ test("full live flow: join, answer in sync, counts, result, export", async () =>
     assert.equal(st.counts[0], 6);
     assert.equal(st.counts[1], 6);
   }
-  // Locked: a second answer to the same question does not change it, and an old question is closed.
+  // Locked: a second answer to the same question does not change it, and an earlier question still keeps the first answer.
   r = await call("POST", "answer", { ...people[0], q: 11, opt: 1 });
   assert.equal((await r.json()).locked, true);
   r = await call("POST", "answer", { ...people[0], q: 3, opt: 1 });
-  assert.equal(r.status, 409);
+  assert.equal((await r.json()).locked, true);
 
   await call("POST", "host/goto", { step: 12 }, host);
   // With rotated answers, the first and second options each spread two answers per zone,
@@ -160,15 +160,10 @@ test("remote control: an old position is not fresh", async () => {
   assert.equal(s.fresh, true);
 });
 
-test("freeze closes answers on the current question until the next goto", async () => {
+test("a late answer to the question just left still counts, a future question does not", async () => {
   const { call } = mk();
   const me = await (await call("POST", "join")).json();
-  await call("POST", "host/goto", { step: 0 });
-  assert.equal((await (await call("POST", "host/freeze", { frozen: true })).json()).frozen, true);
-  const r = await call("POST", "answer", { sid: me.sid, pid: me.pid, q: 0, opt: 0 });
-  assert.equal(r.status, 409);
-  assert.equal((await r.json()).code, "closed");
-  await call("POST", "host/goto", { step: 1 });
-  assert.equal((await (await call("GET", "state")).json()).frozen, false);
-  assert.equal((await call("POST", "answer", { sid: me.sid, pid: me.pid, q: 1, opt: 0 })).status, 200);
+  await call("POST", "host/goto", { step: 3 });
+  assert.equal((await call("POST", "answer", { sid: me.sid, pid: me.pid, q: 2, opt: 0 })).status, 200);
+  assert.equal((await call("POST", "answer", { sid: me.sid, pid: me.pid, q: 4, opt: 0 })).status, 409);
 });

@@ -66,7 +66,7 @@ async function countsFor(store, sid, q) {
 async function publicState(store) {
   const st = await getState(store);
   const joined = (await listKeys(store, `usr/${st.sid}/`)).length;
-  const out = { sid: st.sid, step: st.step, frozen: Boolean(st.frozen), joined, resultsStep: RESULTS_STEP, total: QUESTIONS.length };
+  const out = { sid: st.sid, step: st.step, joined, resultsStep: RESULTS_STEP, total: QUESTIONS.length };
   if (st.step >= 0 && st.step <= LAST_QUESTION) {
     const counts = await countsFor(store, st.sid, st.step);
     out.counts = counts;
@@ -116,7 +116,7 @@ export async function handle(req, { store, hostKey }) {
       const q = Number(body.q), opt = Number(body.opt);
       if (body.sid !== st.sid) return json({ error: "Session ended. Rejoin.", code: "session" }, 409);
       if (typeof body.pid !== "string" || !/^[0-9a-f-]{36}$/.test(body.pid)) return json({ error: "Bad participant" }, 400);
-      if (!Number.isInteger(q) || q !== st.step || q < 0 || q > LAST_QUESTION || st.frozen) return json({ error: "That question is closed.", code: "closed", step: st.step }, 409);
+      if (!Number.isInteger(q) || q > st.step || q < 0 || q > LAST_QUESTION) return json({ error: "That question is closed.", code: "closed", step: st.step }, 409);
       if (!Number.isInteger(opt) || opt < 0 || opt >= QUESTIONS[q].opts.length) return json({ error: "Bad option" }, 400);
       const ukey = `usr/${st.sid}/${body.pid}`;
       const usr = await store.get(ukey, { type: "json" });
@@ -190,7 +190,7 @@ export async function handle(req, { store, hostKey }) {
       const sub = path.slice(5);
       // Moving the quiz and reading the room's totals need no key, by request. The totals are anonymous counts.
       // Reset is open too, so the host never gets stuck. Export (emails) and the deck remote keep the host key.
-      const open = (method === "POST" && (sub === "goto" || sub === "reset" || sub === "freeze")) || (method === "GET" && sub === "zones");
+      const open = (method === "POST" && (sub === "goto" || sub === "reset")) || (method === "GET" && sub === "zones");
       if (!open) {
         if (!hostKey) return json({ error: "HOST_KEY is not set on the server." }, 503);
         if (!keyMatches(req.headers.get("x-host-key"), hostKey)) return json({ error: "Wrong host key." }, 401);
@@ -202,16 +202,6 @@ export async function handle(req, { store, hostKey }) {
         if (!Number.isInteger(step) || step < -1 || step > RESULTS_STEP) return json({ error: "Bad step" }, 400);
         const st = await getState(store);
         st.step = step;
-        st.frozen = false;
-        st.updatedAt = Date.now();
-        await store.setJSON("state", st);
-        return json(await publicState(store));
-      }
-
-      if (method === "POST" && sub === "freeze") {
-        const body = await readBody(req);
-        const st = await getState(store);
-        st.frozen = body.frozen === true;
         st.updatedAt = Date.now();
         await store.setJSON("state", st);
         return json(await publicState(store));
