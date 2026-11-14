@@ -146,7 +146,7 @@
     order.forEach(function (k) {
       var c = el("div", "zcard" + (max > 0 && z.zones[k] === max ? " top" : ""));
       c.appendChild(el("div", "zn", names[k]));
-      c.appendChild(el("div", "zm", "Mode: " + modes[k]));
+      c.appendChild(el("div", "zm", "AI mode: " + modes[k]));
       c.appendChild(el("div", "zc", String(z.zones[k] || 0)));
       c.appendChild(el("div", "zp", z.complete ? Math.round(((z.zones[k] || 0) / z.complete) * 100) + "% of " + z.complete + " who finished" : "Waiting for results"));
       grid.appendChild(c);
