@@ -210,6 +210,8 @@
   });
   keyIn.addEventListener("keydown", function (e) { if (e.key === "Enter") { try { sessionStorage.setItem("fyz-host", keyIn.value); } catch (x) {} flash("Key saved for this tab."); keyIn.blur(); } });
 
+  // Embedded in the deck: no host key, no hint, no reset or export. Arrow keys still move the quiz.
+  try { if (window.self !== window.top) { ["key", "reset", "export", "hint"].forEach(function (id) { var n = document.getElementById(id); if (n) n.style.display = "none"; }); } } catch (e) {}
   tick();
   // Poll every 2s while visible, every 10s if the tab is hidden.
   (function loop() { setTimeout(function () { tick(); loop(); }, document.hidden ? 10000 : 2000); })();
