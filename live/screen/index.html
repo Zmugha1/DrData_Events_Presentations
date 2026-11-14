@@ -83,6 +83,7 @@
   var main = document.getElementById("main"), joinedEl = document.getElementById("joined");
   var ctl = document.getElementById("ctl"), keyIn = document.getElementById("key"), msg = document.getElementById("msg");
   var quiz = null, state = null, zones = null, hideT = null, lastSig = "";
+  var AT = (function () { var m = /[?&]at=(\d+)/.exec(location.search); return m ? Number(m[1]) : null; })();
   var LETTERS = "ABCDEFG";
   var joinUrl = location.origin + "/join";
   try { keyIn.value = sessionStorage.getItem("fyz-host") || ""; } catch (e) {}
@@ -163,6 +164,8 @@
   function render() {
     var sig = JSON.stringify([state.step, state.counts, state.joined, state.answered, zones && zones.zones, zones && zones.jobs, zones && zones.complete]);
     joinedEl.textContent = String(state.joined);
+    // On a deck slide, show nothing until the quiz is on this slide's own step, so no other screen flashes.
+    if (AT != null && state.step !== AT) { main.replaceChildren(); lastSig = ""; return; }
     if (sig === lastSig) return; lastSig = sig;
     if (state.step === -1) renderLobby();
     else if (state.step === quiz.resultsStep) renderResults();
@@ -215,7 +218,6 @@
 
   // Deck mode: /screen?at=N sits on one slide. N is a question (0 to 11) or the results step (12).
   // The quiz moves to N when this slide becomes the active slide, so the deck's own arrows drive the quiz.
-  var AT = (function () { var m = /[?&]at=(\d+)/.exec(location.search); return m ? Number(m[1]) : null; })();
   if (AT !== null) {
     document.body.classList.add("qmode");
     var deck = null, wasActive = false;
