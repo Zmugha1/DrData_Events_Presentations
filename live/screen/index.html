@@ -65,7 +65,7 @@
     <div class="hint" id="hint">Press C for controls. Arrow keys move between questions.</div>
     <div class="ctl" id="ctl">
       <span class="msg" id="msg"></span>
-      <input id="key" type="password" placeholder="Host key" autocomplete="off" aria-label="Host key">
+      <input id="key" type="password" placeholder="Host key (reset and export only)" autocomplete="off" aria-label="Host key">
       <button id="back" type="button">Back</button>
       <button id="next" type="button" class="go">Next</button>
       <button id="lobby" type="button">Lobby</button>
@@ -172,16 +172,14 @@
     if (!quiz) { getJSON("quiz").then(function (j) { quiz = j; tick(); }); return; }
     getJSON("state").then(function (s) {
       state = s;
-      if (s.step === quiz.resultsStep && keyIn.value) {
-        return getJSON("host/zones", { "x-host-key": keyIn.value }).then(function (z) { if (!z.error) zones = z; render(); });
+      if (s.step === quiz.resultsStep) {
+        return getJSON("host/zones").then(function (z) { if (!z.error) zones = z; render(); });
       }
       render();
     }).catch(function () {});
   }
 
   function go(step) {
-    if (!keyIn.value) { flash("Enter the host key."); return; }
-    try { sessionStorage.setItem("fyz-host", keyIn.value); } catch (e) {}
     post("host/goto", { step: step }).then(function (j) {
       if (j.error) { flash(j.error); return; }
       state = j; if (j.step !== quiz.resultsStep) zones = null; lastSig = ""; render(); tick();
