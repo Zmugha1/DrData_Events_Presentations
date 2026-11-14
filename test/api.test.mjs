@@ -159,3 +159,16 @@ test("remote control: an old position is not fresh", async () => {
   s = await (await call("GET", "remote/state")).json();
   assert.equal(s.fresh, true);
 });
+
+test("freeze closes answers on the current question until the next goto", async () => {
+  const { call } = mk();
+  const me = await (await call("POST", "join")).json();
+  await call("POST", "host/goto", { step: 0 });
+  assert.equal((await (await call("POST", "host/freeze", { frozen: true })).json()).frozen, true);
+  const r = await call("POST", "answer", { sid: me.sid, pid: me.pid, q: 0, opt: 0 });
+  assert.equal(r.status, 409);
+  assert.equal((await r.json()).code, "closed");
+  await call("POST", "host/goto", { step: 1 });
+  assert.equal((await (await call("GET", "state")).json()).frozen, false);
+  assert.equal((await call("POST", "answer", { sid: me.sid, pid: me.pid, q: 1, opt: 0 })).status, 200);
+});
