@@ -37,15 +37,14 @@ test("scoring matches the public quiz", () => {
   assert.notEqual(QUESTIONS[1].opts[0].z, "inside");
 });
 
-test("quiz navigation and room totals are open; reset, export and remote need the key and fail closed", async () => {
+test("quiz navigation, reset and room totals are open; export and remote need the key and fail closed", async () => {
   const { call, store } = mk();
   assert.equal((await call("POST", "host/goto", { step: 0 })).status, 200);
   assert.equal((await call("POST", "host/goto", { step: 99 })).status, 400);
   assert.equal((await call("GET", "host/zones")).status, 200);
-  assert.equal((await call("POST", "host/reset")).status, 401);
-  assert.equal((await call("GET", "host/export")).status, 401);
-  assert.equal((await call("POST", "host/reset", null, { "x-host-key": "nope" })).status, 401);
-  const r = await handle(new Request("http://x/api/live/host/reset", { method: "POST", headers: host }), { store, hostKey: undefined });
+    assert.equal((await call("GET", "host/export")).status, 401);
+  assert.equal((await call("POST", "host/reset")).status, 200);
+  const r = await handle(new Request("http://x/api/live/host/export", { method: "GET", headers: host }), { store, hostKey: undefined });
   assert.equal(r.status, 503);
 });
 

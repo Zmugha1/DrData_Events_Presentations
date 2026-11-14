@@ -189,8 +189,8 @@ export async function handle(req, { store, hostKey }) {
     if (path.startsWith("host/")) {
       const sub = path.slice(5);
       // Moving the quiz and reading the room's totals need no key, by request. The totals are anonymous counts.
-      // Reset, export and the deck remote keep the host key: they destroy data, expose emails, or move the deck.
-      const open = (method === "POST" && sub === "goto") || (method === "GET" && sub === "zones");
+      // Reset is open too, so the host never gets stuck. Export (emails) and the deck remote keep the host key.
+      const open = (method === "POST" && (sub === "goto" || sub === "reset")) || (method === "GET" && sub === "zones");
       if (!open) {
         if (!hostKey) return json({ error: "HOST_KEY is not set on the server." }, 503);
         if (!keyMatches(req.headers.get("x-host-key"), hostKey)) return json({ error: "Wrong host key." }, 401);

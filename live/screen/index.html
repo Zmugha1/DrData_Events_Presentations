@@ -65,7 +65,7 @@
     <div class="hint" id="hint">Press C for controls. Arrow keys move between questions.</div>
     <div class="ctl" id="ctl">
       <span class="msg" id="msg"></span>
-      <input id="key" type="password" placeholder="Host key (reset and export only)" autocomplete="off" aria-label="Host key">
+      <input id="key" type="hidden">
       <button id="back" type="button">Back</button>
       <button id="next" type="button" class="go">Next</button>
       <button id="lobby" type="button">Lobby</button>
@@ -191,13 +191,12 @@
   document.getElementById("lobby").onclick = function () { go(-1); };
   document.getElementById("results").onclick = function () { go(quiz.resultsStep); };
   document.getElementById("reset").onclick = function () {
-    if (!keyIn.value) { flash("Enter the host key."); return; }
     if (!confirm("Start a new session? Everyone must rejoin and the current answers are closed.")) return;
     post("host/reset").then(function (j) { if (j.error) { flash(j.error); return; } zones = null; state = j; lastSig = ""; render(); });
   };
   document.getElementById("export").onclick = function () {
-    if (!keyIn.value) { flash("Enter the host key."); return; }
-    fetch("/api/live/host/export", { headers: { "x-host-key": keyIn.value } }).then(function (r) {
+    var k = window.prompt("Export key (only needed to download emails)"); if (!k) return;
+    fetch("/api/live/host/export", { headers: { "x-host-key": k } }).then(function (r) {
       if (!r.ok) return r.json().then(function (j) { flash(j.error || "Export failed"); });
       return r.blob().then(function (b) { var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "find-your-zone-emails.csv"; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000); });
     });
