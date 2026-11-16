@@ -23,6 +23,32 @@
   <div id="__bundler_loading">Unpacking...</div>
 
   <script>
+  (function(){
+    // Presenter sync. Only active when the deck is opened with ?remote=1, so audience copies stay inert.
+    if(!/[?&]remote=1/.test(location.search)) return;
+    var last=-1, seq=null, lastSend=0, bc=null;
+    function deck(){ return document.querySelector('deck-stage'); }
+    function idx(){ var d=deck(); return d && typeof d.index==='number' ? d.index : 0; }
+    function total(){ return document.querySelectorAll('deck-stage > section').length || 60; }
+    function send(force){
+      if(!deck()) return;
+      var i=idx(), now=Date.now();
+      if(i===last && !force && now-lastSend<60000) return;
+      last=i; lastSend=now;
+      if(bc){ try{ bc.postMessage({slide:i}); }catch(e){} }
+      try{ fetch('/api/live/remote/report',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slide:i,total:total()})}).catch(function(){}); }catch(e){}
+    }
+    try{ bc=new BroadcastChannel('fyz-deck'); bc.onmessage=function(e){ var m=e.data||{}; if(m.hello) send(true); if(typeof m.goto==='number' && deck()) deck().goTo(m.goto); }; }catch(e){}
+    setInterval(function(){ send(false); },300);
+    setInterval(function(){
+      fetch('/api/live/remote/state',{cache:'no-store'}).then(function(r){return r.json();}).then(function(s){
+        if(seq===null){ seq=s.seq; return; }
+        if(s.seq!==seq){ seq=s.seq; if(typeof s.cmd==='number' && deck() && s.cmd!==idx()) deck().goTo(s.cmd); }
+      }).catch(function(){});
+    },1000);
+  })();
+  </script>
+  <script>
     
 document.addEventListener('DOMContentLoaded', async function() {
   const loading = document.getElementById('__bundler_loading');

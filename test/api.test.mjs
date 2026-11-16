@@ -134,20 +134,17 @@ test("CSV cells that start with a formula character are neutralised", async () =
   assert.match(csv, /"'=x@evil\.co"/);
 });
 
-test("remote control: command and report need the host key, phone reads", async () => {
+test("remote control: report and command are open, the notes pages read", async () => {
   const { call } = mk();
-  assert.equal((await call("POST", "host/remote", { slide: 5 })).status, 401);
-  // The deck must send the host key to report its slide, so a stranger cannot move the notes.
-  assert.equal((await call("POST", "remote/report", { slide: 3, total: 50 })).status, 401);
-  assert.equal((await call("POST", "remote/report", { slide: 3, total: 50 }, { "x-host-key": "wrong" })).status, 401);
-  assert.equal((await call("POST", "remote/report", { slide: 3, total: 50 }, host)).status, 200);
-  assert.equal((await call("POST", "remote/report", { slide: -1, total: 50 }, host)).status, 400);
+  // No host key, by request. Bad input is still refused.
+  assert.equal((await call("POST", "remote/report", { slide: 3, total: 50 })).status, 200);
+  assert.equal((await call("POST", "remote/report", { slide: -1, total: 50 })).status, 400);
   let s = await (await call("GET", "remote/state")).json();
   assert.equal(s.slide, 3); assert.equal(s.total, 50); assert.equal(s.seq, 0); assert.equal(s.fresh, true);
-  assert.equal((await call("POST", "host/remote", { slide: 4 }, host)).status, 200);
+  assert.equal((await call("POST", "host/remote", { slide: 4 })).status, 200);
   s = await (await call("GET", "remote/state")).json();
   assert.equal(s.seq, 1); assert.equal(s.cmd, 4); assert.equal(s.slide, 3);
-  assert.equal((await call("POST", "host/remote", { slide: 999 }, host)).status, 400);
+  assert.equal((await call("POST", "host/remote", { slide: 999 })).status, 400);
 });
 
 test("remote control: an old position is not fresh", async () => {

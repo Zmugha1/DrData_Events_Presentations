@@ -175,9 +175,7 @@ export async function handle(req, { store, hostKey }) {
     }
 
     if (method === "POST" && path === "remote/report") {
-      // Only the deck, holding the host key, may report its slide.
-      if (!hostKey) return json({ error: "HOST_KEY is not set on the server." }, 503);
-      if (!keyMatches(req.headers.get("x-host-key"), hostKey)) return json({ error: "Wrong host key." }, 401);
+      // No host key, by request: the deck opened with ?remote=1 reports its slide so the notes pages can follow it.
       const body = await readBody(req);
       const slide = Number(body.slide), total = Number(body.total);
       if (!Number.isInteger(slide) || slide < 0 || slide > 199 || !Number.isInteger(total) || total < 1 || total > 200) return json({ error: "Bad slide" }, 400);
@@ -189,8 +187,8 @@ export async function handle(req, { store, hostKey }) {
     if (path.startsWith("host/")) {
       const sub = path.slice(5);
       // Moving the quiz and reading the room's totals need no key, by request. The totals are anonymous counts.
-      // Reset is open too, so the host never gets stuck. Export (emails) and the deck remote keep the host key.
-      const open = (method === "POST" && (sub === "goto" || sub === "reset")) || (method === "GET" && sub === "zones");
+      // Reset is open too, so the host never gets stuck. Only export (emails) keeps the host key.
+      const open = (method === "POST" && (sub === "goto" || sub === "reset" || sub === "remote")) || (method === "GET" && sub === "zones");
       if (!open) {
         if (!hostKey) return json({ error: "HOST_KEY is not set on the server." }, 503);
         if (!keyMatches(req.headers.get("x-host-key"), hostKey)) return json({ error: "Wrong host key." }, 401);
