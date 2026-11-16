@@ -147,9 +147,13 @@ export function firstJobFor(answers) {
   return JOB_FALLBACK;
 }
 
+// A person counts once they have answered at least half of the scored questions.
+// In a live room people miss a question or two, so asking for all eight left the room results empty.
+export const MIN_SCORED = 4;
 export function hasScoredAnswers(answers) {
-  for (let n = 0; n < SCORED_QUESTIONS; n++) if (answers[n] === undefined) return false;
-  return true;
+  let n = 0;
+  for (let i = 0; i < SCORED_QUESTIONS; i++) if (answers[i] !== undefined) n++;
+  return n >= MIN_SCORED;
 }
 
 export function computeResult(answers) {

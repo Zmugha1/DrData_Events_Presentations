@@ -24,9 +24,11 @@ test("scoring matches the public quiz", () => {
   assert.equal(zoneFor({ below: 4, inside: 4, above: 0, oscillating: 0 }), "below");
   assert.equal(zoneFor({ below: 3, inside: 0, above: 0, oscillating: 3 }), "oscillating");
   assert.equal(zoneFor({ below: 2, inside: 2, above: 2, oscillating: 2 }), "above");
-  // Eight answers are needed.
+  // At least four of the eight scored answers are needed.
   const seven = all("inside"); delete seven[7];
-  assert.equal(computeResult(seven), null);
+  assert.equal(computeResult(seven).zoneKey, "inside");
+  const three = all("inside"); for (const k of [3, 4, 5, 6, 7]) delete three[k];
+  assert.equal(computeResult(three), null);
   assert.deepEqual(scoreAnswers(pick(["below", "below", "inside", "above", "oscillating", "inside", "inside", "below"])), { below: 3, inside: 3, above: 1, oscillating: 1 });
   // First job: the first of Q1 to Q3 answered Below.
   assert.equal(firstJobFor(all("inside")), "Your most repeated task");
@@ -166,4 +168,16 @@ test("a late answer to the question just left still counts, a future question do
   await call("POST", "host/goto", { step: 3 });
   assert.equal((await call("POST", "answer", { sid: me.sid, pid: me.pid, q: 2, opt: 0 })).status, 200);
   assert.equal((await call("POST", "answer", { sid: me.sid, pid: me.pid, q: 4, opt: 0 })).status, 409);
+});
+
+test("room results count people who answered at least half of the scored questions", async () => {
+  const { call } = mk();
+  const p = await (await call("POST", "join")).json();
+  await call("POST", "host/goto", { step: 7 }, host);
+  for (const q of [0, 1, 3, 5, 6]) await call("POST", "answer", { ...p, q, opt: 0 });
+  const z = await (await call("GET", "host/zones")).json();
+  assert.equal(z.complete, 1);
+  assert.equal(Object.values(z.zones).reduce((a, b) => a + b, 0), 1);
+  const res = await (await call("POST", "result", p)).json();
+  assert.equal(res.incomplete, false);
 });
