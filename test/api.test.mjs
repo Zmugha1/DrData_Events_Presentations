@@ -178,3 +178,23 @@ test("room results count people who answered at least half of the scored questio
   const res = await (await call("POST", "result", p)).json();
   assert.equal(res.incomplete, false);
 });
+
+test("joined is live: phones that stop checking in drop off, phones that check in stay", async () => {
+  const { store, call } = mk();
+  const a = await (await call("POST", "join")).json();
+  const b = await (await call("POST", "join")).json();
+  assert.equal((await (await call("GET", "state")).json()).joined, 2);
+  // An old phone from an earlier rehearsal: it checked in ten minutes ago and never again.
+  const old = "00000000-0000-4000-8000-000000000000";
+  await store.set(`seen/${a.sid}/${Math.floor(Date.now() / 60000) - 10}/${old}`, "1");
+  assert.equal((await (await call("GET", "state")).json()).joined, 2);
+  // A third phone arrives with a stored pid and only checks in.
+  const c = "11111111-1111-4111-8111-111111111111";
+  await call("GET", `state?sid=${a.sid}&pid=${c}`);
+  assert.equal((await (await call("GET", "state")).json()).joined, 3);
+  // A check-in for another session does not count.
+  await call("GET", `state?sid=zzzzzzzz&pid=${c.replace(/1/g, "2")}`);
+  assert.equal((await (await call("GET", "state")).json()).joined, 3);
+  await call("POST", "host/reset");
+  assert.equal((await (await call("GET", "state")).json()).joined, 0);
+});

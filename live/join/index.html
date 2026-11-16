@@ -115,7 +115,7 @@
     if (result.incomplete) {
       var c0 = el("div", "card");
       c0.appendChild(el("div", "qlabel", "Your zone"));
-      c0.appendChild(el("div", "head", "We need answers to the first eight questions to find your Zone."));
+      c0.appendChild(el("div", "head", "We need answers to at least four of the first eight questions to find your Zone."));
       c0.appendChild(el("p", "body", "You can take the full quiz in about three minutes."));
       var a0 = el("a", "btn", "Take the full quiz"); a0.href = result.fullQuizUrl; a0.target = "_blank"; a0.rel = "noopener";
       c0.appendChild(a0);
@@ -176,7 +176,7 @@
     }).catch(function () { resultBusy = false; });
   }
 
-  var lastKey = "";
+  var lastKey = "", lastHb = 0;
   function render() {
     var s = state.step, key = s + ":" + (mine[s] === undefined ? "n" : mine[s]) + ":" + (result ? "r" + (result.emailSaved ? 1 : 0) : "x");
     if (key === lastKey && s !== quiz.resultsStep) return;
@@ -188,7 +188,9 @@
 
   function tick() {
     if (!quiz) { api("quiz").then(function (j) { quiz = j; tick(); }).catch(fail); return; }
-    api("state").then(function (st) {
+    var hb = me && (Date.now() - lastHb > 20000);
+    if (hb) lastHb = Date.now();
+    api("state" + (hb ? "?sid=" + encodeURIComponent(me.sid) + "&pid=" + encodeURIComponent(me.pid) : "")).then(function (st) {
       banner.style.display = "none";
       state = st;
       return ensureJoined().then(render);

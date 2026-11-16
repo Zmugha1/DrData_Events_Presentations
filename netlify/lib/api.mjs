@@ -63,9 +63,24 @@ async function countsFor(store, sid, q) {
   return counts;
 }
 
+// "Joined" is live: phones that checked in during the last few minutes. A phone checks in when it joins and
+// again every ~20 seconds. Old rehearsal phones and closed tabs drop off instead of counting forever.
+const SEEN_MS = 60 * 1000, SEEN_BUCKETS = 5;
+const PID_RE = /^[0-9a-f-]{36}$/;
+async function touch(store, sid, pid) {
+  await store.set(`seen/${sid}/${Math.floor(Date.now() / SEEN_MS)}/${pid}`, "1");
+}
+async function liveJoined(store, sid) {
+  const b = Math.floor(Date.now() / SEEN_MS);
+  const lists = await Promise.all(Array.from({ length: SEEN_BUCKETS }, (_, k) => listKeys(store, `seen/${sid}/${b - k}/`)));
+  const ids = new Set();
+  for (const keys of lists) for (const key of keys) ids.add(key.slice(key.lastIndexOf("/") + 1));
+  return ids.size;
+}
+
 async function publicState(store) {
   const st = await getState(store);
-  const joined = (await listKeys(store, `usr/${st.sid}/`)).length;
+  const joined = await liveJoined(store, st.sid);
   const out = { sid: st.sid, step: st.step, joined, resultsStep: RESULTS_STEP, total: QUESTIONS.length };
   if (st.step >= 0 && st.step <= LAST_QUESTION) {
     const counts = await countsFor(store, st.sid, st.step);
@@ -98,6 +113,12 @@ export async function handle(req, { store, hostKey }) {
     }
 
     if (method === "GET" && path === "state") {
+      // A phone passes its sid and pid every ~20 seconds so the room count is live.
+      const sidQ = url.searchParams.get("sid"), pidQ = url.searchParams.get("pid");
+      if (sidQ && pidQ && PID_RE.test(pidQ)) {
+        const cur = await getState(store);
+        if (cur.sid === sidQ) await touch(store, cur.sid, pidQ);
+      }
       return json(await publicState(store));
     }
 
@@ -107,6 +128,7 @@ export async function handle(req, { store, hostKey }) {
       if (existing >= MAX_PARTICIPANTS) return json({ error: "Session is full" }, 503);
       const pid = randomUUID();
       await store.setJSON(`usr/${st.sid}/${pid}`, { answers: {}, createdAt: Date.now() });
+      await touch(store, st.sid, pid);
       return json({ sid: st.sid, pid });
     }
 
