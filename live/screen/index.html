@@ -46,6 +46,18 @@
   .jobs span { background: var(--white); border: 2px solid var(--line); border-radius: 99px; padding: 0.8vh 1.8vh; }
   .jobs b { font-weight: 800; }
   footer { display: flex; align-items: center; justify-content: space-between; color: var(--slate); font-size: 1.6vh; min-height: 4vh; }
+  #emails { position: fixed; inset: 0; background: rgba(45,68,89,.55); display: none; align-items: center; justify-content: center; z-index: 50; }
+  #emails.show { display: flex; }
+  #emails .box { background: var(--white); color: var(--navy); border-radius: 1.4vh; padding: 3vh 3.4vh; width: min(92vw, 900px); max-height: 88vh; overflow: auto; font-size: 2vh; }
+  #emails h2 { margin: 0 0 1.4vh; font-size: 3vh; }
+  #emails input[type=password] { font: inherit; padding: 1.2vh; border: 2px solid var(--line); border-radius: 0.8vh; width: 100%; box-sizing: border-box; margin: 1vh 0; }
+  #emails button { font: inherit; padding: 1.1vh 1.8vh; border-radius: 0.8vh; border: 1px solid var(--navy); background: var(--white); color: var(--navy); margin: 0.6vh 0.8vh 0.6vh 0; cursor: pointer; }
+  #emails button.go { background: var(--navy); color: var(--white); }
+  #emails table { border-collapse: collapse; width: 100%; margin-top: 1.4vh; }
+  #emails th, #emails td { text-align: left; padding: 0.8vh 1vh; border-bottom: 1px solid var(--line); font-size: 1.9vh; word-break: normal; }
+  #emails td:first-child { word-break: break-all; }
+  #emails .note { color: #4A5E70; margin: 0.8vh 0; }
+  #emails .err { color: #B3261E; margin: 0.8vh 0; }
   .ctl { display: flex; gap: 1vh; align-items: center; opacity: 0.0; transition: opacity 0.25s; }
   .ctl.show, footer:hover .ctl { opacity: 1; }
   .ctl button, .ctl input { font: inherit; font-size: 1.7vh; padding: 0.8vh 1.4vh; border-radius: 0.8vh; border: 1px solid var(--line); background: var(--white); color: var(--navy); }
@@ -76,6 +88,13 @@
     </div>
   </footer>
 </div>
+<div id="emails"><div class="box">
+  <h2>Emails from this session</h2>
+  <div id="em-ask"><div class="note">Enter the export key (HOST_KEY from Netlify).</div>
+  <input id="em-key" type="password" autocomplete="off" placeholder="Export key"><div><button id="em-go" class="go" type="button">Show emails</button><button id="em-close" type="button">Close</button></div></div>
+  <div id="em-out" style="display:none"></div>
+  <div class="err" id="em-err"></div>
+</div></div>
 <script src="/live/qrcode.js"></script>
 <script>
 (function () {
@@ -198,15 +217,38 @@
     if (!confirm("Start a new session? Everyone must rejoin and the current answers are closed.")) return;
     post("host/reset").then(function (j) { if (j.error) { flash(j.error); return; } zones = null; state = j; lastSig = ""; render(); });
   };
-  document.getElementById("export").onclick = function () {
-    var k = window.prompt("Export key (only needed to download emails)"); if (!k) return;
-    fetch("/api/live/host/export", { headers: { "x-host-key": k } }).then(function (r) {
-      if (!r.ok) return r.json().then(function (j) { flash(j.error || "Export failed"); });
-      return r.blob().then(function (b) { var a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "find-your-zone-emails.csv"; a.click(); setTimeout(function () { URL.revokeObjectURL(a.href); }, 2000); });
-    });
-  };
+  var emEl = document.getElementById("emails"), emKey = document.getElementById("em-key"), emErr = document.getElementById("em-err"), emOut = document.getElementById("em-out"), emAsk = document.getElementById("em-ask");
+  function emOpen() { emErr.textContent = ""; emOut.style.display = "none"; emOut.textContent = ""; emAsk.style.display = ""; emKey.value = keyIn.value || ""; emEl.classList.add("show"); setTimeout(function () { emKey.focus(); }, 50); }
+  document.getElementById("export").onclick = emOpen;
+  document.getElementById("em-close").onclick = function () { emEl.classList.remove("show"); };
+  function emLoad() {
+    var k = emKey.value.trim(); emErr.textContent = ""; if (!k) { emErr.textContent = "Enter the key first."; return; }
+    fetch("/api/live/host/export?format=json", { headers: { "x-host-key": k } }).then(function (r) {
+      return r.json().then(function (j) { return { ok: r.ok, j: j }; });
+    }).then(function (x) {
+      if (!x.ok) { emErr.textContent = x.j.error || "Could not load emails."; return; }
+      try { sessionStorage.setItem("fyz-host", k); keyIn.value = k; } catch (e) {}
+      var rows = x.j.rows || [], text = rows.map(function (r) { return r.email; }).join("\n");
+      emAsk.style.display = "none"; emOut.style.display = ""; emOut.textContent = "";
+      var n = document.createElement("div"); n.className = "note";
+      n.textContent = rows.length + " with consent, out of " + x.j.total + " who joined." + (x.j.withheld ? " " + x.j.withheld + " gave an email without consent and are not shown." : "");
+      emOut.appendChild(n);
+      var b1 = document.createElement("button"); b1.type = "button"; b1.className = "go"; b1.textContent = "Copy all emails";
+      b1.onclick = function () { var done = function () { b1.textContent = "Copied"; }; if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(text).then(done, function () { ta.select(); }); } else { ta.select(); document.execCommand && document.execCommand("copy"); done(); } };
+      var b2 = document.createElement("button"); b2.type = "button"; b2.textContent = "Close"; b2.onclick = function () { emEl.classList.remove("show"); };
+      emOut.appendChild(b1); emOut.appendChild(b2);
+      var ta = document.createElement("textarea"); ta.readOnly = true; ta.value = text; ta.style.cssText = "width:100%;height:12vh;margin-top:1vh;font:inherit;box-sizing:border-box"; emOut.appendChild(ta);
+      var t = document.createElement("table"), h = document.createElement("tr");
+      ["Email", "Zone", "First job"].forEach(function (c) { var th = document.createElement("th"); th.textContent = c; h.appendChild(th); }); t.appendChild(h);
+      rows.forEach(function (r) { var tr = document.createElement("tr"); [r.email, r.zone, r.firstJob].forEach(function (c) { var td = document.createElement("td"); td.textContent = c || ""; tr.appendChild(td); }); t.appendChild(tr); });
+      emOut.appendChild(t);
+    }).catch(function () { emErr.textContent = "No connection to the server."; });
+  }
+  document.getElementById("em-go").onclick = emLoad;
+  emKey.addEventListener("keydown", function (e) { if (e.key === "Enter") emLoad(); });
+  if (/[?&]emails=1/.test(location.search)) emOpen();
   document.addEventListener("keydown", function (e) {
-    if (e.target === keyIn) return;
+    if (e.target === keyIn || e.target === emKey) return;
     if (e.key === "c" || e.key === "C") { ctl.classList.toggle("show"); }
     else if (e.key === "ArrowRight" || e.key === " ") { e.preventDefault(); document.getElementById("next").click(); }
     else if (e.key === "ArrowLeft") { document.getElementById("back").click(); }

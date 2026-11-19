@@ -265,6 +265,17 @@ export async function handle(req, { store, hostKey }) {
         const people = await allParticipants(store, st.sid);
         const header = ["email", "consent", "zone", "mode", "first_job", ...QUESTIONS.map((q) => q.key)];
         const lines = [header.map(csvCell).join(",")];
+        if (new URL(req.url).searchParams.get("format") === "json") {
+          const rows = [];
+          let withheld = 0;
+          for (const p of people) {
+            if (p.email && !p.consent) withheld++;
+            if (!p.email || !p.consent) continue;
+            const r = computeResult(p.answers);
+            rows.push({ email: p.email, zone: r ? r.zone : "incomplete", mode: r ? r.mode : "", firstJob: r ? r.firstJob : "" });
+          }
+          return json({ rows, withheld, total: people.length });
+        }
         for (const p of people) {
           if (!p.email || !p.consent) continue;
           const r = computeResult(p.answers);
