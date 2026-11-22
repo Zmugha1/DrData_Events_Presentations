@@ -108,7 +108,7 @@
   try { keyIn.value = sessionStorage.getItem("fyz-host") || ""; } catch (e) {}
 
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
-  function getJSON(p, h) { return fetch("/api/live/" + p, { headers: h || {} }).then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); }); }
+  function getJSON(p, h) { return fetch("/api/live/" + p, { headers: h || {} }).then(function (r) { if (r.status === 410) window.__liveOff = true; return r.json().then(function (j) { j._status = r.status; return j; }); }); }
   function post(p, body) { return fetch("/api/live/" + p, { method: "POST", headers: { "content-type": "application/json", "x-host-key": keyIn.value }, body: JSON.stringify(body || {}) }).then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); }); }
   function flash(t) { msg.textContent = t; ctl.classList.add("show"); clearTimeout(hideT); hideT = setTimeout(function () { ctl.classList.remove("show"); msg.textContent = ""; }, 4000); }
 
@@ -281,7 +281,7 @@
 
   tick();
   // Poll every 2s while visible, every 10s if the tab is hidden.
-  (function loop() { setTimeout(function () { if (!(window.__fyzSkip && window.__fyzSkip())) tick(); loop(); }, document.hidden ? 10000 : 2000); })();
+  (function loop() { if (window.__liveOff) return; setTimeout(function () { if (!(window.__fyzSkip && window.__fyzSkip())) tick(); loop(); }, document.hidden ? 10000 : 2000); })();
 })();
 </script>
 </body>

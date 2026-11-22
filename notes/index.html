@@ -71,8 +71,8 @@
   if(bc){ try{ bc.postMessage({goto:n}); }catch(e){} }
   fetch("/api/live/host/remote",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({slide:n})}).then(function(r){ remoteOk=r.ok; setStatus(r.ok?"Leading. The deck and Marcos follow you.":"Could not reach the deck",!r.ok); }).catch(function(){ setStatus("No connection to the server",true); }); }
  function poll(){ if(linked) return;
-  fetch("/api/live/remote/state",{cache:"no-store"}).then(function(r){return r.json()}).then(function(s){ if(!s.fresh){ setStatus("Waiting for the deck. Open it with ?remote=1.",true); return; } if(typeof s.slide==="number"&&s.total>0){ if(lastSeq===null||(!LEAD&&s.slide!==i)){ i=Math.min(s.slide,D.length-1); show(); } lastSeq=s.seq; setStatus(LEAD?"Leading. Arrow keys or the buttons move the deck.":"Following Zubia"); } }).catch(function(){ setStatus("No connection to the server",true); }); }
- setInterval(poll,1200); poll();
+  if(document.hidden) return; fetch("/api/live/remote/state",{cache:"no-store"}).then(function(r){ if(r.status===410){ clearInterval(pollT); setStatus("Live remote is off between events.",true); throw 0; } return r.json()}).then(function(s){ if(!s.fresh){ setStatus("Waiting for the deck. Open it with ?remote=1.",true); return; } if(typeof s.slide==="number"&&s.total>0){ if(lastSeq===null||(!LEAD&&s.slide!==i)){ i=Math.min(s.slide,D.length-1); show(); } lastSeq=s.seq; setStatus(LEAD?"Leading. Arrow keys or the buttons move the deck.":"Following Zubia"); } }).catch(function(){ setStatus("No connection to the server",true); }); }
+ var pollT=setInterval(poll,1200); poll();
  $("prev").onclick=function(){ goTo(i-1); }; $("first").onclick=function(){ goTo(0); }; $("nx").onclick=function(){ goTo(i+1); };
  $("sm").onclick=function(){ fs=Math.max(16,fs-2); show(); }; $("lg").onclick=function(){ fs=Math.min(60,fs+2); show(); };
  $("rst").onclick=function(){ t0=Date.now(); };
