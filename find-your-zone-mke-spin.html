@@ -39,9 +39,14 @@
       try{ fetch('/api/live/remote/report',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({slide:i,total:total()})}).catch(function(){}); }catch(e){}
     }
     try{ bc=new BroadcastChannel('fyz-deck'); bc.onmessage=function(e){ var m=e.data||{}; if(m.hello) send(true); if(typeof m.goto==='number' && deck()) deck().goTo(m.goto); }; }catch(e){}
-    setInterval(function(){ send(false); },300);
-    setInterval(function(){
-      fetch('/api/live/remote/state',{cache:'no-store'}).then(function(r){return r.json();}).then(function(s){
+    // Stops after 3 hours, or as soon as the server says live features are off.
+    var started=Date.now(), t1=null, t2=null;
+    function stopLive(){ clearInterval(t1); clearInterval(t2); }
+    t1=setInterval(function(){ if(Date.now()-started>10800000) return stopLive(); send(false); },300);
+    t2=setInterval(function(){
+      if(document.hidden) return;
+      if(Date.now()-started>10800000) return stopLive();
+      fetch('/api/live/remote/state',{cache:'no-store'}).then(function(r){ if(r.status===410){ stopLive(); throw 0; } return r.json();}).then(function(s){
         if(seq===null){ seq=s.seq; return; }
         if(s.seq!==seq){ seq=s.seq; if(typeof s.cmd==='number' && deck() && s.cmd!==idx()) deck().goTo(s.cmd); }
       }).catch(function(){});

@@ -198,3 +198,20 @@ test("joined is live: phones that stop checking in drop off, phones that check i
   await call("POST", "host/reset");
   assert.equal((await (await call("GET", "state")).json()).joined, 0);
 });
+
+test("live features are off unless enabled: every route answers 410 without touching the store", async () => {
+  const store = memStore();
+  const off = (method, path, body) => handle(new Request(`http://x/api/live/${path}`, { method, body: body ? JSON.stringify(body) : undefined }), { store, hostKey: KEY, enabled: false });
+  for (const [m, p, b] of [["GET", "remote/state"], ["GET", "deck/state"], ["GET", "state"], ["POST", "remote/report", { slide: 3, total: 10 }], ["POST", "join", { name: "A" }]]) {
+    const r = await off(m, p, b);
+    assert.equal(r.status, 410, `${m} ${p}`);
+    assert.equal((await r.json()).live, false);
+  }
+  assert.equal(await store.get("remote", { type: "json" }), null);
+});
+
+test("live features stay on when enabled is not passed", async () => {
+  const { call } = mk();
+  const r = await call("GET", "remote/state");
+  assert.equal(r.status, 200);
+});

@@ -102,7 +102,10 @@ async function allParticipants(store, sid) {
   return rows.filter(Boolean);
 }
 
-export async function handle(req, { store, hostKey }) {
+export async function handle(req, { store, hostKey, enabled = true }) {
+  // Kill switch. Live features cost Netlify credits on every poll, so they stay off between events.
+  // Answer 410 before any store access; the pages stop polling when they see it.
+  if (!enabled) return json({ live: false, error: "Live features are off between events." }, 410);
   const url = new URL(req.url);
   const path = url.pathname.replace(/^\/api\/live\/?/, "").replace(/\/$/, "");
   const method = req.method.toUpperCase();
