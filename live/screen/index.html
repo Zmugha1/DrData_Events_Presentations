@@ -9,6 +9,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/live/live.css">
 <style>
+  table.steps { width: 100%; border-collapse: collapse; margin-top: 2vh; font-size: 2.2vh; }
+  table.steps th, table.steps td { text-align: left; padding: 1.1vh 1vw; border-bottom: 1px solid var(--line); }
+  table.steps td + td, table.steps th + th { text-align: center; }
   html, body { height: 100%; overflow: hidden; }
   .stage { height: 100vh; display: grid; grid-template-rows: auto 1fr auto; padding: 2.2vh 4vw 1.6vh; gap: 1.6vh; }
   header { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--line); padding-bottom: 1.4vh; }
@@ -104,12 +107,15 @@
   var quiz = null, state = null, zones = null, hideT = null, lastSig = "";
   var AT = (function () { var m = /[?&]at=(\d+)/.exec(location.search); return m ? Number(m[1]) : null; })();
   var LETTERS = "ABCDEFG";
-  var joinUrl = location.origin + "/join";
+  // ?e=<id> runs one event's quiz. No id: the original Find Your Zone quiz.
+  var EV = (/[?&]e=([a-z0-9-]{1,40})(&|$)/.exec(location.search) || [])[1] || "";
+  function withEv(p) { return EV ? p + (p.indexOf("?") >= 0 ? "&" : "?") + "e=" + EV : p; }
+  var joinUrl = location.origin + "/join" + (EV ? "?e=" + EV : "");
   try { keyIn.value = sessionStorage.getItem("fyz-host") || ""; } catch (e) {}
 
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
-  function getJSON(p, h) { return fetch("/api/live/" + p, { headers: h || {} }).then(function (r) { if (r.status === 410) window.__liveOff = true; return r.json().then(function (j) { j._status = r.status; return j; }); }); }
-  function post(p, body) { return fetch("/api/live/" + p, { method: "POST", headers: { "content-type": "application/json", "x-host-key": keyIn.value }, body: JSON.stringify(body || {}) }).then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); }); }
+  function getJSON(p, h) { return fetch("/api/live/" + withEv(p), { headers: h || {} }).then(function (r) { if (r.status === 410) window.__liveOff = true; return r.json().then(function (j) { j._status = r.status; return j; }); }); }
+  function post(p, body) { return fetch("/api/live/" + withEv(p), { method: "POST", headers: { "content-type": "application/json", "x-host-key": keyIn.value }, body: JSON.stringify(body || {}) }).then(function (r) { return r.json().then(function (j) { j._status = r.status; return j; }); }); }
   function flash(t) { msg.textContent = t; ctl.classList.add("show"); clearTimeout(hideT); hideT = setTimeout(function () { ctl.classList.remove("show"); msg.textContent = ""; }, 4000); }
 
   function qrSvg(text) {
@@ -127,14 +133,48 @@
     var wrap = el("div", "lobby"), left = el("div");
     left.appendChild(el("div", "eyebrow", "Join the quiz"));
     left.appendChild(el("h1", "big", "Scan to find your zone"));
-    left.appendChild(el("p", "meta", "Twelve questions. Answer on your phone. Results appear here as the room answers."));
+    var stepped = quiz.questions[0] && quiz.questions[0].parts;
+    left.appendChild(el("p", "meta", stepped ? quiz.questions.length + " steps of one job. Three quick questions each. Answer on your phone." : "Twelve questions. Answer on your phone. Results appear here as the room answers."));
     left.appendChild(el("div", "url", joinUrl.replace(/^https?:\/\//, "")));
     var qrBox = el("div", "qr"); qrBox.appendChild(qrSvg(joinUrl));
     wrap.appendChild(left); wrap.appendChild(qrBox);
     main.replaceChildren(wrap);
   }
 
+  function renderSteps() {
+    var s = state.step, q = quiz.questions[s], frag = document.createDocumentFragment();
+    frag.appendChild(el("div", "eyebrow", q.label));
+    frag.appendChild(el("div", "qtext", q.q));
+    q.parts.forEach(function (pt, i) {
+      var row = el("div", "opt");
+      row.appendChild(el("div", "letter", String(i + 1)));
+      row.appendChild(el("div", "t", pt.q));
+      frag.appendChild(row);
+    });
+    frag.appendChild(el("div", "meta", (state.answered || 0) + " of " + Math.max(state.answered || 0, state.joined) + " answered all three"));
+    main.replaceChildren(frag);
+  }
+
+  function renderStepResults() {
+    var frag = document.createDocumentFragment(), z = zones;
+    frag.appendChild(el("div", "eyebrow", "The room"));
+    frag.appendChild(el("h1", "big", "Where each step landed"));
+    var t = el("table", "steps"), h = el("tr");
+    ["Step", "Below · Encode", "Inside · Assist", "Above · Research"].forEach(function (c) { h.appendChild(el("th", "", c)); });
+    t.appendChild(h);
+    (z ? z.steps : []).forEach(function (s) {
+      var r = el("tr");
+      r.appendChild(el("td", "", s.name));
+      ["below", "inside", "above"].forEach(function (k) { r.appendChild(el("td", "", String(s.zones[k] || 0))); });
+      t.appendChild(r);
+    });
+    frag.appendChild(t);
+    frag.appendChild(el("div", "meta", z ? z.complete + (z.complete === 1 ? " person" : " people") + " answered at least one step. Each person sees their own Zone map on their phone." : "Waiting for results"));
+    main.replaceChildren(frag);
+  }
+
   function renderQuestion() {
+    if (quiz.questions[state.step] && quiz.questions[state.step].parts) { renderSteps(); return; }
     var s = state.step, q = quiz.questions[s], counts = state.counts || [], total = counts.reduce(function (a, b) { return a + b; }, 0);
     var max = Math.max.apply(null, counts.concat([0]));
     var frag = document.createDocumentFragment();
@@ -155,6 +195,7 @@
   }
 
   function renderResults() {
+    if ((zones && zones.steps) || (quiz.questions[0] && quiz.questions[0].parts)) { renderStepResults(); return; }
     var frag = document.createDocumentFragment();
     frag.appendChild(el("div", "eyebrow", "The room"));
     frag.appendChild(el("h1", "big", "Where the room landed"));
@@ -223,7 +264,7 @@
   document.getElementById("em-close").onclick = function () { emEl.classList.remove("show"); };
   function emLoad() {
     var k = emKey.value.trim(); emErr.textContent = ""; if (!k) { emErr.textContent = "Enter the key first."; return; }
-    fetch("/api/live/host/export?format=json", { headers: { "x-host-key": k } }).then(function (r) {
+    fetch("/api/live/" + withEv("host/export?format=json"), { headers: { "x-host-key": k } }).then(function (r) {
       return r.json().then(function (j) { return { ok: r.ok, j: j }; });
     }).then(function (x) {
       if (!x.ok) { emErr.textContent = x.j.error || "Could not load emails."; return; }

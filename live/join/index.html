@@ -39,6 +39,10 @@
   .err { color: var(--coral); font-weight: 600; font-size: 14px; margin-top: 8px; min-height: 18px; }
   .ok { color: var(--navy); font-weight: 600; margin-top: 8px; }
   .small { font-size: 13px; color: var(--slate); margin-top: 18px; }
+  .part { font-size: 17px; font-weight: 600; color: var(--navy); margin: 18px 0 10px; line-height: 1.3; }
+  .part:first-of-type { margin-top: 6px; }
+  .zrow { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .zrow b { color: var(--navy); white-space: nowrap; }
   .banner { position: fixed; left: 0; right: 0; top: 0; background: var(--coral); color: var(--white); text-align: center; font-size: 14px; padding: 8px; display: none; }
 </style>
 </head>
@@ -56,7 +60,10 @@
   "use strict";
   var view = document.getElementById("view");
   var banner = document.getElementById("banner");
-  var LS = "fyz-live-v1";
+  // ?e=<id> joins one event's quiz. No id: the original Find Your Zone quiz.
+  var EV = (/[?&]e=([a-z0-9-]{1,40})(&|$)/.exec(location.search) || [])[1] || "";
+  var LS = "fyz-live-v1" + (EV ? "-" + EV : "");
+  function withEv(p) { return EV ? p + (p.indexOf("?") >= 0 ? "&" : "?") + "e=" + EV : p; }
   var quiz = null, state = null, me = null, mine = {}, result = null, resultFor = null, resultBusy = false;
   var LETTERS = "ABCDEFG";
 
@@ -65,7 +72,7 @@
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text !== undefined) n.textContent = text; return n; }
   function api(path, body) {
     var opt = body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : {};
-    return fetch("/api/live/" + path, opt).then(function (r) { if (r.status === 410) window.__liveOff = true; return r.json().then(function (j) { j._status = r.status; return j; }); });
+    return fetch("/api/live/" + withEv(path), opt).then(function (r) { if (r.status === 410) window.__liveOff = true; return r.json().then(function (j) { j._status = r.status; return j; }); });
   }
 
   function ensureJoined() {
@@ -80,8 +87,64 @@
     view.replaceChildren(header(title, sub));
   }
 
+  // A step with parts: three questions on one screen. Each part locks once answered.
+  function partsDone(step) { var row = mine[step]; var q = quiz.questions[step]; return !!(row && q.parts && q.parts.every(function (_, i) { return row[i] !== undefined && row[i] !== null; })); }
+  function renderParts(step) {
+    var q = quiz.questions[step], row = mine[step] || [];
+    var card = el("div", "card");
+    card.appendChild(el("div", "qlabel", q.label));
+    card.appendChild(el("div", "qtext", q.q));
+    q.parts.forEach(function (pt, p) {
+      card.appendChild(el("div", "part", pt.q));
+      var chosen = row[p];
+      pt.opts.forEach(function (text, i) {
+        var b = el("button", "opt" + (chosen === i ? " chosen" : "") + (chosen !== undefined && chosen !== null && chosen !== i ? " dim" : ""));
+        b.type = "button";
+        b.appendChild(el("span", "letter", LETTERS[i]));
+        b.appendChild(el("span", "", text));
+        if (chosen !== undefined && chosen !== null) b.disabled = true;
+        b.addEventListener("click", function () { answerPart(step, p, i); });
+        card.appendChild(b);
+      });
+    });
+    card.appendChild(el("div", "status", partsDone(step) ? "All three answered. Watch the screen for the next step." : "Answer all three for this step."));
+    view.replaceChildren(card);
+  }
+
+  function answerPart(step, part, i) {
+    var row = mine[step] || [];
+    if (row[part] !== undefined && row[part] !== null) return;
+    row[part] = i; mine[step] = row; save(); renderParts(step);
+    api("answer", { sid: me.sid, pid: me.pid, q: step, part: part, opt: i }).then(function (j) {
+      if (j.code === "rejoin" || j.code === "session") { me = null; mine = {}; save(); tick(); return; }
+      if (j.code === "closed" || j.error) { row[part] = null; save(); tick(); return; }
+      if (j.locked && j.opt !== undefined) { row[part] = j.opt; save(); }
+    }).catch(function () { row[part] = null; save(); renderParts(step); });
+  }
+
+  function renderStepMap() {
+    var card = el("div", "card");
+    card.appendChild(el("div", "zone", "YOUR ZONE MAP"));
+    card.appendChild(el("div", "head", quiz.title || "Your job, step by step"));
+    var modes = { below: "Encode", inside: "Assist", above: "Research", oscillating: "Learn" };
+    var names = { below: "Below", inside: "Inside", above: "Above", oscillating: "Oscillating" };
+    result.steps.forEach(function (s) {
+      var r = el("div", "zrow");
+      r.appendChild(el("span", "", s.name));
+      r.appendChild(el("b", "", s.zoneKey ? names[s.zoneKey] + " · " + modes[s.zoneKey] : "Not answered"));
+      card.appendChild(r);
+    });
+    if (result.firstJob) {
+      var f = el("div", "job", "Start here: write down the rule for");
+      f.appendChild(el("strong", "", result.firstJob));
+      card.appendChild(f);
+    }
+    return card;
+  }
+
   function renderQuestion(step) {
     var q = quiz.questions[step];
+    if (q.parts) { renderParts(step); return; }
     var card = el("div", "card");
     card.appendChild(el("div", "qlabel", "Question " + (step + 1) + " of " + quiz.questions.length));
     card.appendChild(el("div", "qtext", q.q));
@@ -115,6 +178,10 @@
     if (result.incomplete) {
       var c0 = el("div", "card");
       c0.appendChild(el("div", "qlabel", "Your zone"));
+      if (quiz.questions[0] && quiz.questions[0].parts) {
+        c0.appendChild(el("div", "head", "Answer all three questions for at least one step to see your Zone map."));
+        view.replaceChildren(c0); return;
+      }
       c0.appendChild(el("div", "head", "We need answers to at least four of the first eight questions to find your Zone."));
       c0.appendChild(el("p", "body", "You can take the full quiz in about three minutes."));
       var a0 = el("a", "btn", "Take the full quiz"); a0.href = result.fullQuizUrl; a0.target = "_blank"; a0.rel = "noopener";
@@ -122,6 +189,7 @@
       view.replaceChildren(c0); return;
     }
     var card = el("div", "card");
+    if (result.steps) { view.replaceChildren(renderStepMap()); appendFollowUp(); return; }
     card.appendChild(el("div", "zone", result.zone + "  ·  AI mode: " + result.mode));
     card.appendChild(el("div", "head", result.head));
     card.appendChild(el("p", "body", result.body));
@@ -138,7 +206,10 @@
       card.appendChild(mixEl);
     }
     view.replaceChildren(card);
+    appendFollowUp();
+  }
 
+  function appendFollowUp() {
     var form = el("div", "card");
     if (result.emailSaved) {
       form.appendChild(el("div", "ok", "Thank you. We will follow up personally."));
@@ -178,7 +249,7 @@
 
   var lastKey = "", lastHb = 0;
   function render() {
-    var s = state.step, key = s + ":" + (mine[s] === undefined ? "n" : mine[s]) + ":" + (result ? "r" + (result.emailSaved ? 1 : 0) : "x");
+    var s = state.step, key = s + ":" + (mine[s] === undefined ? "n" : JSON.stringify(mine[s])) + ":" + (result ? "r" + (result.emailSaved ? 1 : 0) : "x");
     if (key === lastKey && s !== quiz.resultsStep) return;
     lastKey = key;
     if (s === -1) { renderWait("You are in.", "The first question is about to appear on the big screen and here."); return; }
@@ -204,7 +275,7 @@
   // answered the current question, and every 12s while the tab is hidden.
   function delay() {
     if (document.hidden) return 12000;
-    if (state && state.step >= 0 && state.step < state.resultsStep && mine[state.step] !== undefined) return 5000;
+    if (state && state.step >= 0 && state.step < state.resultsStep && (quiz && quiz.questions[state.step] && quiz.questions[state.step].parts ? partsDone(state.step) : mine[state.step] !== undefined)) return 5000;
     return 3000;
   }
   (function loop() { if (window.__liveOff) return; setTimeout(function () { tick(); loop(); }, delay()); })();

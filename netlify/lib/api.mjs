@@ -2,11 +2,10 @@
 // Netlify Blobs in production and an in-memory store in tests.
 
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
-import {
-  QUESTIONS, publicQuestions, computeResult, hasScoredAnswers, firstJobFor, zoneFor, scoreAnswers,
-  ZONES, FULL_QUIZ_URL, SCORED_QUESTIONS,
-} from "./quiz.mjs";
+import { QUESTIONS, SCORED_QUESTIONS } from "./quiz.mjs";
+import { quizFor, scoped, FULL_QUIZ_URL } from "./events.mjs";
 
+// Default quiz positions. Each event's quiz has its own, from its question count.
 export const LAST_QUESTION = QUESTIONS.length - 1; // 11
 export const RESULTS_STEP = QUESTIONS.length; // 12
 const MAX_PARTICIPANTS = 500;
@@ -52,8 +51,13 @@ async function listKeys(store, prefix) {
   return out;
 }
 
-async function countsFor(store, sid, q) {
-  const n = QUESTIONS[q].opts.length;
+// Answers to a question with parts (oya-01) count once a person has answered every part.
+async function doneFor(store, sid, q) {
+  return (await listKeys(store, `done/${sid}/q${q}/`)).length;
+}
+
+async function countsFor(store, sid, q, Q) {
+  const n = Q.questions[q].opts.length;
   const counts = new Array(n).fill(0);
   const keys = await listKeys(store, `cnt/${sid}/q${q}/`);
   for (const k of keys) {
@@ -78,14 +82,19 @@ async function liveJoined(store, sid) {
   return ids.size;
 }
 
-async function publicState(store) {
+async function publicState(store, Q) {
   const st = await getState(store);
   const joined = await liveJoined(store, st.sid);
-  const out = { sid: st.sid, step: st.step, joined, resultsStep: RESULTS_STEP, total: QUESTIONS.length };
-  if (st.step >= 0 && st.step <= LAST_QUESTION) {
-    const counts = await countsFor(store, st.sid, st.step);
-    out.counts = counts;
-    out.answered = counts.reduce((a, b) => a + b, 0);
+  const total = Q.questions.length;
+  const out = { sid: st.sid, step: st.step, joined, resultsStep: total, total };
+  if (st.step >= 0 && st.step < total) {
+    if (Q.parts) {
+      out.answered = await doneFor(store, st.sid, st.step);
+    } else {
+      const counts = await countsFor(store, st.sid, st.step, Q);
+      out.counts = counts;
+      out.answered = counts.reduce((a, b) => a + b, 0);
+    }
   }
   return out;
 }
@@ -102,17 +111,23 @@ async function allParticipants(store, sid) {
   return rows.filter(Boolean);
 }
 
-export async function handle(req, { store, hostKey, enabled = true }) {
+export async function handle(req, { store: baseStore, hostKey, enabled = true }) {
   // Kill switch. Live features cost Netlify credits on every poll, so they stay off between events.
   // Answer 410 before any store access; the pages stop polling when they see it.
   if (!enabled) return json({ live: false, error: "Live features are off between events." }, 410);
   const url = new URL(req.url);
   const path = url.pathname.replace(/^\/api\/live\/?/, "").replace(/\/$/, "");
   const method = req.method.toUpperCase();
+  // ?e=<id> picks an event's quiz and keeps its answers apart. No id: the original quiz.
+  const ev = url.searchParams.get("e") || "";
+  const Q = quizFor(ev);
+  if (!Q) return json({ error: "Unknown event" }, 404);
+  const store = ev ? scoped(baseStore, `ev/${ev}/`) : baseStore;
+  const LAST = Q.questions.length - 1, RESULTS = Q.questions.length;
 
   try {
     if (method === "GET" && path === "quiz") {
-      return json({ questions: publicQuestions(), resultsStep: RESULTS_STEP, fullQuizUrl: FULL_QUIZ_URL });
+      return json({ questions: Q.publicQuestions(), resultsStep: RESULTS, fullQuizUrl: FULL_QUIZ_URL, event: ev, title: Q.title || "" });
     }
 
     if (method === "GET" && path === "state") {
@@ -122,7 +137,7 @@ export async function handle(req, { store, hostKey, enabled = true }) {
         const cur = await getState(store);
         if (cur.sid === sidQ) await touch(store, cur.sid, pidQ);
       }
-      return json(await publicState(store));
+      return json(await publicState(store, Q));
     }
 
     if (method === "POST" && path === "join") {
@@ -141,9 +156,23 @@ export async function handle(req, { store, hostKey, enabled = true }) {
       const q = Number(body.q), opt = Number(body.opt);
       if (body.sid !== st.sid) return json({ error: "Session ended. Rejoin.", code: "session" }, 409);
       if (typeof body.pid !== "string" || !/^[0-9a-f-]{36}$/.test(body.pid)) return json({ error: "Bad participant" }, 400);
-      if (!Number.isInteger(q) || q > st.step || q < 0 || q > LAST_QUESTION) return json({ error: "That question is closed.", code: "closed", step: st.step }, 409);
-      if (!Number.isInteger(opt) || opt < 0 || opt >= QUESTIONS[q].opts.length) return json({ error: "Bad option" }, 400);
+      if (!Number.isInteger(q) || q > st.step || q < 0 || q > LAST) return json({ error: "That question is closed.", code: "closed", step: st.step }, 409);
       const ukey = `usr/${st.sid}/${body.pid}`;
+      if (Q.parts) {
+        const parts = Q.questions[q].parts, part = Number(body.part);
+        if (!Number.isInteger(part) || part < 0 || part >= parts.length) return json({ error: "Bad part" }, 400);
+        if (!Number.isInteger(opt) || opt < 0 || opt >= parts[part].opts.length) return json({ error: "Bad option" }, 400);
+        const usr = await store.get(ukey, { type: "json" });
+        if (!usr) return json({ error: "Rejoin", code: "rejoin" }, 404);
+        const row = Array.isArray(usr.answers[q]) ? usr.answers[q] : [];
+        if (row[part] !== undefined && row[part] !== null) return json({ ok: true, locked: true, part, opt: row[part] });
+        row[part] = opt;
+        usr.answers[q] = row;
+        await store.setJSON(ukey, usr);
+        if (parts.every((_, i) => row[i] !== undefined && row[i] !== null)) await store.set(`done/${st.sid}/q${q}/${body.pid}`, "1");
+        return json({ ok: true, locked: false, part, opt });
+      }
+      if (!Number.isInteger(opt) || opt < 0 || opt >= Q.questions[q].opts.length) return json({ error: "Bad option" }, 400);
       const usr = await store.get(ukey, { type: "json" });
       if (!usr) return json({ error: "Rejoin", code: "rejoin" }, 404);
       if (usr.answers[q] !== undefined) return json({ ok: true, locked: true, opt: usr.answers[q] });
@@ -170,7 +199,7 @@ export async function handle(req, { store, hostKey, enabled = true }) {
         usr.emailAt = Date.now();
         await store.setJSON(ukey, usr);
       }
-      const result = computeResult(usr.answers);
+      const result = Q.computeResult(usr.answers);
       if (!result) return json({ incomplete: true, fullQuizUrl: FULL_QUIZ_URL, emailSaved: Boolean(usr.email) });
       return json({ incomplete: false, ...result, emailSaved: Boolean(usr.email) });
     }
@@ -222,12 +251,12 @@ export async function handle(req, { store, hostKey, enabled = true }) {
       if (method === "POST" && sub === "goto") {
         const body = await readBody(req);
         const step = Number(body.step);
-        if (!Number.isInteger(step) || step < -1 || step > RESULTS_STEP) return json({ error: "Bad step" }, 400);
+        if (!Number.isInteger(step) || step < -1 || step > RESULTS) return json({ error: "Bad step" }, 400);
         const st = await getState(store);
         st.step = step;
         st.updatedAt = Date.now();
         await store.setJSON("state", st);
-        return json(await publicState(store));
+        return json(await publicState(store, Q));
       }
 
       if (method === "POST" && sub === "remote") {
@@ -243,30 +272,18 @@ export async function handle(req, { store, hostKey, enabled = true }) {
       if (method === "POST" && sub === "reset") {
         const st = { sid: randomUUID().slice(0, 8), step: -1, updatedAt: Date.now() };
         await store.setJSON("state", st);
-        return json(await publicState(store));
+        return json(await publicState(store, Q));
       }
 
       if (method === "GET" && sub === "zones") {
         const st = await getState(store);
-        const people = await allParticipants(store, st.sid);
-        const zones = { below: 0, inside: 0, above: 0, oscillating: 0 };
-        const jobs = {};
-        let complete = 0, emails = 0;
-        for (const p of people) {
-          if (p.email) emails++;
-          if (!hasScoredAnswers(p.answers)) continue;
-          complete++;
-          zones[zoneFor(scoreAnswers(p.answers))]++;
-          const job = firstJobFor(p.answers);
-          jobs[job] = (jobs[job] ?? 0) + 1;
-        }
-        return json({ joined: people.length, complete, emails, zones, jobs, names: Object.fromEntries(Object.entries(ZONES).map(([k, v]) => [k, v.zone])), modes: Object.fromEntries(Object.entries(ZONES).map(([k, v]) => [k, v.mode])) });
+        return json(Q.roomZones(await allParticipants(store, st.sid)));
       }
 
       if (method === "GET" && sub === "export") {
         const st = await getState(store);
         const people = await allParticipants(store, st.sid);
-        const header = ["email", "consent", "zone", "mode", "first_job", ...QUESTIONS.map((q) => q.key)];
+        const header = Q.exportHeader();
         const lines = [header.map(csvCell).join(",")];
         if (new URL(req.url).searchParams.get("format") === "json") {
           const rows = [];
@@ -274,20 +291,17 @@ export async function handle(req, { store, hostKey, enabled = true }) {
           for (const p of people) {
             if (p.email && !p.consent) withheld++;
             if (!p.email || !p.consent) continue;
-            const r = computeResult(p.answers);
-            rows.push({ email: p.email, zone: r ? r.zone : "incomplete", mode: r ? r.mode : "", firstJob: r ? r.firstJob : "" });
+            rows.push(Q.exportJson(p));
           }
           return json({ rows, withheld, total: people.length });
         }
         for (const p of people) {
           if (!p.email || !p.consent) continue;
-          const r = computeResult(p.answers);
-          const answers = QUESTIONS.map((q, n) => (p.answers[n] !== undefined ? q.opts[p.answers[n]].t : ""));
-          lines.push([p.email, "yes", r ? r.zone : "incomplete", r ? r.mode : "", r ? r.firstJob : "", ...answers].map(csvCell).join(","));
+          lines.push(Q.exportRow(p).map(csvCell).join(","));
         }
         return new Response(lines.join("\n") + "\n", {
           status: 200,
-          headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="find-your-zone-${st.sid}.csv"`, "cache-control": "no-store" },
+          headers: { "content-type": "text/csv; charset=utf-8", "content-disposition": `attachment; filename="find-your-zone-${ev ? ev + "-" : ""}${st.sid}.csv"`, "cache-control": "no-store" },
         });
       }
     }

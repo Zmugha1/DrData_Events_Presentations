@@ -70,8 +70,8 @@ Admin: a supplier invoice.
 
 | Part | Status |
 |---|---|
-| Live quiz with QR join | Live, one question set at a time |
-| Front desk and invoice questions for this workshop | Planned |
+| Live quiz with QR join | Live. This workshop uses `/join?e=oya-01` and `/screen?e=oya-01` |
+| Front desk and invoice questions (six steps, STZ 1.1, 1.6, 1.5) | Built, behind the live switch |
 | Fab shop setup on the Hub | Planned |
 | Diagnostic Parts B and C on the box, per-attendee preview | Planned |
 | Speed test on the demo box | Planned |

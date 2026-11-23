@@ -60,7 +60,7 @@ Attendees scan a QR code. Three parts, about 10 minutes.
 
 Parts B and C describe real businesses. They are Confidential: consent on the form, kept on the box, wiped after each event, never in this repo.
 
-Built: the live quiz (one question set, one event at a time). Planned: an event key so each workshop has its own questions and results; Parts B and C on the box with a per-attendee preview.
+Built: the live quiz with an event key (`/join?e=oya-01`, `/screen?e=oya-01`), so each workshop has its own questions and results. Planned: Parts B and C on the box with a per-attendee preview.
 
 ## 7. Rules
 
