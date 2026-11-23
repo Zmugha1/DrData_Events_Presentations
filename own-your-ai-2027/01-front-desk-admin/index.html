@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Front Desk and Admin AI, Built Live | Own Your AI 2027 Workshops</title>
+<style>
+  :root { --navy:#2D4459; --teal:#3BBFBF; --coral:#F05F57; --cream:#FEFAF5; --slate:#7A8F95; --ink:#1A1A1A; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { height:100%; background:var(--navy); font-family:Inter, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; color:var(--ink); }
+  .deck { position:relative; width:100vw; height:100vh; overflow:hidden; }
+  section { position:absolute; inset:0; display:none; flex-direction:column; justify-content:center; padding:6vh 7vw; background:var(--cream); }
+  section.on { display:flex; }
+  section.dark { background:var(--navy); color:var(--cream); }
+  h1 { font-size:clamp(28px,4.6vw,64px); line-height:1.08; color:var(--navy); font-weight:800; }
+  h2 { font-size:clamp(22px,3vw,42px); line-height:1.15; color:var(--navy); font-weight:800; margin-bottom:3vh; }
+  .dark h1, .dark h2 { color:var(--cream); }
+  p, li, td, th { font-size:clamp(14px,1.55vw,22px); line-height:1.45; }
+  ul, ol { margin-left:1.3em; }
+  li { margin:.45em 0; }
+  .kicker { text-transform:uppercase; letter-spacing:.12em; font-size:clamp(11px,1vw,15px); color:var(--teal); font-weight:700; margin-bottom:2vh; }
+  .sub { color:var(--slate); margin-top:2vh; }
+  .dark .sub { color:#c9d3d6; }
+  .big { font-size:clamp(48px,9vw,140px); font-weight:800; color:var(--teal); line-height:1; }
+  .meaning { margin-top:1.5vh; font-size:clamp(15px,1.7vw,24px); }
+  .src { margin-top:3vh; font-size:clamp(10px,.9vw,13px); color:var(--slate); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:3vw; }
+  .grid4 { display:grid; grid-template-columns:repeat(4,1fr); gap:1.4vw; }
+  .card { background:#fff; border:1px solid #e6e1d8; border-radius:10px; padding:1.6vw; }
+  .card h3 { font-size:clamp(14px,1.4vw,20px); color:var(--navy); margin-bottom:.6em; }
+  .card p, .card li { font-size:clamp(11px,1.05vw,15px); }
+  .dark .card { background:#36506a; border-color:#4a6680; }
+  .dark .card h3 { color:var(--cream); }
+  table { border-collapse:collapse; width:100%; }
+  th, td { text-align:left; padding:.5em .7em; border-bottom:1px solid #e6e1d8; vertical-align:top; }
+  th { color:var(--navy); }
+  .remove { position:absolute; top:0; left:0; right:0; background:var(--coral); color:#fff; font-weight:800; text-align:center; padding:.6em; font-size:clamp(12px,1.1vw,16px); letter-spacing:.08em; }
+  .collab { padding-top:9vh; justify-content:flex-start; overflow:auto; }
+  .collab p, .collab li { font-size:clamp(11px,1.05vw,15px); }
+  .ph { background:#fde8e6; padding:0 .25em; border-radius:3px; }
+  .brand { position:absolute; left:7vw; bottom:3vh; display:flex; align-items:center; gap:.6em; font-size:clamp(10px,.9vw,13px); color:var(--slate); }
+  .brand img { height:32px; }
+  .count { position:absolute; right:3vw; bottom:3vh; font-size:12px; color:var(--slate); }
+  .qr { width:min(34vh,30vw); height:min(34vh,30vw); background:#fff; padding:10px; border-radius:10px; }
+  .notes { display:none; position:fixed; left:0; right:0; bottom:0; max-height:32vh; overflow:auto; background:#111; color:#eee; padding:1em 2em; font-size:15px; line-height:1.5; z-index:10; }
+  .notes.show { display:block; }
+  .zone { border-left:6px solid var(--teal); }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+<!-- COLLABORATION SLIDE 1: remove before event -->
+<section class="collab" data-notes="Collaboration slide for Mary Jane. Delete before the workshop runs.">
+  <div class="remove">COLLABORATION DRAFT. REMOVE BEFORE EVENT.</div>
+  <div class="kicker">For Mary Jane: ICP marketing messages</div>
+  <h2>Front Desk and Admin AI, Built Live</h2>
+  <div class="grid4">
+    <div class="card"><h3>Trades and home services</h3>
+      <p><b>Hook:</b> Every missed call is a job someone else quotes.</p>
+      <p><b>Message:</b> 44% of tracked business calls go unanswered. In one hour we build a front desk that answers new inquiries in your words, sorts them, and holds anything missing for you. It runs on a box in the room. No cloud.</p>
+      <p><b>CTA:</b> Save your seat. Bring your phone.</p>
+      <p><b>Channel:</b> BNI chapters, trade associations, MSP client lists.</p></div>
+    <div class="card"><h3>Accounting, insurance, advisory offices</h3>
+      <p><b>Hook:</b> Your inbox is not a filing system.</p>
+      <p><b>Message:</b> Invoices, forms and PDFs read into data. Every field shows the page it came from. A person confirms. Due dates and unpaid invoices are flagged by code, not guessed.</p>
+      <p><b>CTA:</b> Save your seat.</p>
+      <p><b>Channel:</b> CPA referral partners, chambers, LinkedIn.</p></div>
+    <div class="card"><h3>Clinics and med spas</h3>
+      <p><b>Hook:</b> Book the client, not the voicemail.</p>
+      <p><b>Message:</b> New inquiries answered in your voice, sorted by what the person needs, held for a person when it matters. The system runs on hardware in your office. Your data stays with you.</p>
+      <p><b>CTA:</b> Save your seat.</p>
+      <p><b>Channel:</b> Referral partners, local business groups.</p></div>
+    <div class="card"><h3>Restaurants, bars and event venues</h3>
+      <p><b>Hook:</b> Guests call, text and message. Who answers at 9 pm?</p>
+      <p><b>Message:</b> Event and catering inquiries answered in your words. Supplier invoices matched to orders. Your guest list turned into posts and emails from your own data.</p>
+      <p><b>CTA:</b> Save your seat.</p>
+      <p><b>Channel:</b> Hospitality vendor groups, venue owner networks.</p></div>
+  </div>
+  <p class="src">Figure: 44% of 70 million tracked calls missed, Invoca 2026 benchmark as reported by JustCall (justcall.io/blog/missed-call-statistics.html). Every message: no compliance claims, sample data only in the workshop.</p>
+</section>
+
+<!-- COLLABORATION SLIDE 2: remove before event -->
+<section class="collab" data-notes="Collaboration slide for Mary Jane. Fill the marked fields once the date, venue and RSVP form are set. Delete before the workshop runs.">
+  <div class="remove">COLLABORATION DRAFT. REMOVE BEFORE EVENT.</div>
+  <div class="kicker">For Mary Jane: social media announcements</div>
+  <h2>Front Desk and Admin AI, Built Live</h2>
+  <div class="grid2">
+    <div class="card"><h3>LinkedIn post</h3>
+      <p>Owners lose work at the front desk. 44% of tracked business calls go unanswered. Admin took 36% of the week in one survey of 251 owners.</p>
+      <p>On <span class="ph">[DATE]</span> we build a private AI front desk live, in one hour. New inquiries answered in the owner's words. Invoices read into data, checked by a person. It runs on a box in the room. No cloud.</p>
+      <p>Bring your phone. You leave with a map of your own front desk and admin work, and an estimate of the hours it gives back.</p>
+      <p>Dr. Zubia Mughal (Dr. Data), Marcos Ramos (AI adoption) and Mary Jane Sanchez (marketing). <span class="ph">[VENUE]</span>. RSVP: <span class="ph">[RSVP LINK]</span></p></div>
+    <div class="card"><h3>Facebook and Instagram caption</h3>
+      <p>Missed calls. Piles of invoices. One hour to fix the system behind them.</p>
+      <p>Front Desk and Admin AI, Built Live. <span class="ph">[DATE]</span>, <span class="ph">[TIME]</span>, <span class="ph">[VENUE]</span>. Private AI built in the room, on your rules. Bring your phone.</p>
+      <p>Seats are limited to 15. RSVP: <span class="ph">[RSVP LINK]</span></p></div>
+    <div class="card"><h3>Story or short teaser</h3>
+      <p>Who answers your inquiries at 9 pm? Find out in one hour. <span class="ph">[DATE]</span>. Link in bio.</p></div>
+    <div class="card"><h3>Reminder, day before</h3>
+      <p>Tomorrow: Front Desk and Admin AI, Built Live. Bring your phone or laptop. You will map one job in your own business and see a private system built live. <span class="ph">[TIME]</span>, <span class="ph">[VENUE]</span>.</p></div>
+  </div>
+  <p class="src">Figures: Invoca 2026 via JustCall (justcall.io/blog/missed-call-statistics.html). Admin share: Time etc and Censuswide 2023 survey, summarized at stealthagents.com/research/small-business-owner-admin-time-statistics-2026. Pink fields are to fill.</p>
+</section>
+
+<!-- EVENT SLIDES -->
+<section class="dark" data-notes="Welcome everyone. I am Zubia, Dr. Data. In the next hour we are going to look at one job every business has, the front desk and the paperwork behind it, and build a private system for it live, right here in the room.">
+  <div class="kicker">Own Your AI 2027 Workshops</div>
+  <h1>Front Desk and Admin AI,<br>Built Live</h1>
+  <p class="sub">Dr. Zubia Mughal, Ed.D. · Marcos Ramos · Mary Jane Sanchez</p>
+</section>
+
+<section data-notes="Three of us run this hour. I build the system. Marcos covers adoption, how your team actually takes it up. Mary Jane shows what your own data can do for your marketing.">
+  <h2>Who is in the room</h2>
+  <div class="grid2" style="grid-template-columns:repeat(3,1fr)">
+    <div class="card"><h3>Dr. Zubia Mughal</h3><p>Dr. Data Decision Intelligence. Builds the system live.</p></div>
+    <div class="card"><h3>Marcos Ramos</h3><p>AI Adoption Specialist. How your team takes it up.</p></div>
+    <div class="card"><h3>Mary Jane Sanchez</h3><p>Marketing. What your own customer data can do.</p></div>
+  </div>
+</section>
+
+<section data-notes="Start with the phone. Across 70 million tracked business calls, 44 percent were missed. And callers do not wait. In a survey of a thousand consumers, 78 percent said they had walked away from a business after an unanswered call.">
+  <div class="kicker">The front desk</div>
+  <div class="grid2">
+    <div><div class="big">44%</div><p class="meaning">of 70 million tracked business calls were missed. Almost half.</p></div>
+    <div><div class="big">78%</div><p class="meaning">of surveyed consumers have left a business after an unanswered call. The call is gone.</p></div>
+  </div>
+  <p class="src">Invoca 2026 benchmark, reported by JustCall: justcall.io/blog/missed-call-statistics.html · CallRail consumer survey, n = 1,000: callrail.com/blog/missed-calls-cost-businesses-more-than-ever</p>
+</section>
+
+<section data-notes="Now the paperwork. In one survey of 251 owners, admin took 36 percent of a 45.5 hour week. By my arithmetic that is about 16 hours a week. That is two working days spent on work that does not grow the business.">
+  <div class="kicker">The paperwork</div>
+  <div class="big">36%</div>
+  <p class="meaning">of a 45.5-hour week went to admin in a survey of 251 owners. About 16 hours a week.</p>
+  <p class="src">Time etc and Censuswide, 2023, summarized at stealthagents.com/research/small-business-owner-admin-time-statistics-2026. The 16 hours is our calculation from the two survey figures.</p>
+</section>
+
+<section data-notes="This is what you take home tonight. Four things, all about your own business, not ours.">
+  <h2>What you leave with</h2>
+  <ol>
+    <li>A Zone map of one front desk or admin job in your business.</li>
+    <li>Your own rule card, in your words.</li>
+    <li>An estimate of the hours it gives back, on your own numbers.</li>
+    <li>A 40-minute session to turn the map into a plan.</li>
+  </ol>
+</section>
+
+<section data-notes="Phones out. Scan the code. You will answer a few short questions about one job in your own business. There are no wrong answers. Your answers about your Zones show on the screen as a room, never by name.">
+  <div class="grid2" style="align-items:center">
+    <div><div class="kicker">Find Your Zone</div><h2>Scan. Pick one job. Answer for each step.</h2>
+      <p>Can you state the rule? Is it routine, or does it need your judgment? Does any part go past what you can call with confidence?</p>
+      <p class="sub">drdataevents.netlify.app/join</p></div>
+    <div id="qr" class="qr" aria-label="QR code to join"></div>
+  </div>
+</section>
+
+<section data-notes="Marcos leads this section. Talking points to be written by Marcos: what the room's Zone results show, and how staff take up a system like this.">
+  <div class="kicker">Adoption · Marcos Ramos</div>
+  <h2>Four Zones. Four ways the system behaves.</h2>
+  <div class="grid4">
+    <div class="card zone"><h3>Below: Encode</h3><p>You can state the rule. The work is routine. The system runs your rule.</p></div>
+    <div class="card zone"><h3>Inside: Assist</h3><p>You have a rule, and each case needs your judgment. The system gathers and drafts. You decide.</p></div>
+    <div class="card zone"><h3>Above: Research</h3><p>The work goes past your confident reach. The system brings cited sources and says what it does not know.</p></div>
+    <div class="card zone"><h3>Oscillating: Learn</h3><p>Your answer changes as you learn. The system shows its reasoning. You decide and say why.</p></div>
+  </div>
+</section>
+
+<section data-notes="Here is our practice business. It is made up. Every number on the screen in the build is sample data. Twenty-five people, a fab shop that makes and sells custom metal parts.">
+  <div class="kicker">Synthetic practice business</div>
+  <h2>A 25-person custom metal fabrication and supply shop</h2>
+  <p>Makes brackets, railings, enclosures and custom parts. Sells to contractors, farms and local manufacturers.</p>
+  <p class="sub">Roles: Owner, Office manager, Estimator, Shop lead. All data on screen is sample data.</p>
+</section>
+
+<section data-notes="The front desk job, step by step. Watch the right column. Code does the lookups and the holds. The model writes the short reply text only. A person approves.">
+  <h2>Job 1: a new inquiry</h2>
+  <table>
+    <tr><th>Step</th><th>Done by</th></tr>
+    <tr><td>1. Inquiry arrives by email or web form</td><td>Document intake reads it</td></tr>
+    <tr><td>2. Sorted by intent</td><td>Code, using the owner's categories</td></tr>
+    <tr><td>3. Customer found in the CRM</td><td>Code</td></tr>
+    <tr><td>4. Held if information is missing</td><td>Code, using the owner's hold rule</td></tr>
+    <tr><td>5. Reply drafted</td><td>Local model, short text only, in the owner's words</td></tr>
+    <tr><td>6. Approved</td><td>A person</td></tr>
+    <tr><td>7. Follow-up drafted on the set day</td><td>Code sets the day, a person sends</td></tr>
+  </table>
+</section>
+
+<section data-notes="The admin job. A supplier invoice. Every field it pulls shows the page it came from. A mismatch against the purchase order stops it. The office manager confirms.">
+  <h2>Job 2: a supplier invoice</h2>
+  <table>
+    <tr><th>Step</th><th>Done by</th></tr>
+    <tr><td>1. Invoice PDF arrives</td><td>Document intake reads it</td></tr>
+    <tr><td>2. Vendor, PO number, amount, due date pulled</td><td>Extracted, with the page each came from</td></tr>
+    <tr><td>3. Matched to the purchase order</td><td>Code</td></tr>
+    <tr><td>4. Held on a mismatch</td><td>Code, using the owner's hold rule</td></tr>
+    <tr><td>5. Confirmed</td><td>Office manager</td></tr>
+    <tr><td>6. Due-date and unpaid alerts</td><td>Code</td></tr>
+  </table>
+</section>
+
+<section class="dark" data-notes="Now I switch to the box. I enter the fab shop owner's answers. Compile. You will see the rules, the holds, the never-say lines and the dashboard tiles appear. No model decided any of it.">
+  <div class="kicker">Live build</div>
+  <h1>Switch to the private AI box</h1>
+  <div class="grid2" style="margin-top:4vh">
+    <div class="card"><h3>Code does</h3><p>Lookups, sorting, matching, holds, dates, alerts, every number.</p></div>
+    <div class="card"><h3>The model does</h3><p>The short reply text, in the owner's words. Nothing else. A person approves it.</p></div>
+  </div>
+</section>
+
+<section data-notes="Mary Jane leads this section. Talking points to be written by Mary Jane: customer capture, posts and emails drafted from the business's own data, and customers who have not come back.">
+  <div class="kicker">Marketing · Mary Jane Sanchez</div>
+  <h2>Your customer data, working for your marketing</h2>
+  <ul>
+    <li>Customer capture by QR code.</li>
+    <li>Posts and emails drafted from your own data.</li>
+    <li>A list of customers who have not been back.</li>
+  </ul>
+  <p class="sub">Sample data only on screen.</p>
+</section>
+
+<section data-notes="This is your result. Your Zone for each step. Your rule, in your words. And the cost. The math is simple: the hours this job takes you each week, times what an hour costs you. The steps you placed Below are where those hours come back first.">
+  <h2>Your result</h2>
+  <ol>
+    <li>Your Zone for each step of your job.</li>
+    <li>Your rule card, in your words.</li>
+    <li>What this job costs you today = hours a week × your hourly cost. The steps placed Below are where hours come back first.</li>
+  </ol>
+  <p class="sub">Your answers stay on the box and are deleted after tonight.</p>
+</section>
+
+<section data-notes="Marcos leads this section. Talking points to be written by Marcos: the first step for each owner's team, and what changes for staff.">
+  <div class="kicker">Adoption · Marcos Ramos</div>
+  <h2>The first step for your team</h2>
+  <p>One job. One rule. One person who approves.</p>
+</section>
+
+<section class="dark" data-notes="Your map is the agenda for our next conversation. Book a 40-minute session before you leave. We will turn your Zone map into a plan for your business.">
+  <div class="kicker">Next</div>
+  <h1>Book your 40-minute session</h1>
+  <p class="sub">Your Zone map is the agenda.</p>
+</section>
+
+<section data-notes="Every figure tonight, with its source.">
+  <h2>Sources</h2>
+  <ol>
+    <li>Invoca 2026 benchmark, 70 million calls, as reported by JustCall: justcall.io/blog/missed-call-statistics.html</li>
+    <li>CallRail consumer survey, n = 1,000: callrail.com/blog/missed-calls-cost-businesses-more-than-ever</li>
+    <li>Time etc and Censuswide, 2023, 251 owners, summarized at stealthagents.com/research/small-business-owner-admin-time-statistics-2026</li>
+  </ol>
+</section>
+
+<div class="brand"><img src="../../live/mascot.png" alt="Dr. Data">Dr. Data Decision Intelligence</div>
+<div class="count" id="count"></div>
+</div>
+<div class="notes" id="notes"></div>
+
+<script src="../../live/qrcode.js"></script>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll("section"));
+  var i = 0, notes = document.getElementById("notes"), count = document.getElementById("count");
+  function show(n) {
+    i = Math.max(0, Math.min(slides.length - 1, n));
+    slides.forEach(function (s, k) { s.classList.toggle("on", k === i); });
+    count.textContent = (i + 1) + " / " + slides.length;
+    notes.textContent = slides[i].getAttribute("data-notes") || "";
+    location.hash = String(i + 1);
+  }
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "ArrowRight" || e.key === "PageDown" || e.key === " ") show(i + 1);
+    else if (e.key === "ArrowLeft" || e.key === "PageUp") show(i - 1);
+    else if (e.key === "n" || e.key === "N") notes.classList.toggle("show");
+  });
+  document.getElementById("deck").addEventListener("click", function (e) {
+    show(e.clientX > window.innerWidth / 2 ? i + 1 : i - 1);
+  });
+  try {
+    var text = location.origin + "/join";
+    var qr = qrcode(0, "M"); qr.addData(text); qr.make();
+    var n = qr.getModuleCount(), m = 2, size = n + m * 2, d = "";
+    for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qr.isDark(r, c)) d += "M" + (c + m) + " " + (r + m) + "h1v1h-1z";
+    document.getElementById("qr").innerHTML = '<svg viewBox="0 0 ' + size + ' ' + size + '" width="100%" height="100%"><path d="' + d + '" fill="#1A1A1A"/></svg>';
+  } catch (err) { document.getElementById("qr").textContent = "drdataevents.netlify.app/join"; }
+  show(parseInt(location.hash.slice(1), 10) - 1 || 0);
+})();
+</script>
+</body>
+</html>
