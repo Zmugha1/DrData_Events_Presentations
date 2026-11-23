@@ -158,7 +158,7 @@
   <div class="grid2" style="align-items:center">
     <div><div class="kicker">Find Your Zone</div><h2>Scan. Pick one job. Answer for each step.</h2>
       <p>Can you state the rule? Is it routine, or does it need your judgment? Does any part go past what you can call with confidence?</p>
-      <p class="sub">drdataevents.netlify.app/join</p></div>
+      <p class="sub">drdataevents.netlify.app/join?e=oya-01</p></div>
     <div id="qr" class="qr" aria-label="QR code to join"></div>
   </div>
 </section>
@@ -291,12 +291,12 @@
     show(e.clientX > window.innerWidth / 2 ? i + 1 : i - 1);
   });
   try {
-    var text = location.origin + "/join";
+    var text = location.origin + "/join?e=oya-01";
     var qr = qrcode(0, "M"); qr.addData(text); qr.make();
     var n = qr.getModuleCount(), m = 2, size = n + m * 2, d = "";
     for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (qr.isDark(r, c)) d += "M" + (c + m) + " " + (r + m) + "h1v1h-1z";
     document.getElementById("qr").innerHTML = '<svg viewBox="0 0 ' + size + ' ' + size + '" width="100%" height="100%"><path d="' + d + '" fill="#1A1A1A"/></svg>';
-  } catch (err) { document.getElementById("qr").textContent = "drdataevents.netlify.app/join"; }
+  } catch (err) { document.getElementById("qr").textContent = "drdataevents.netlify.app/join?e=oya-01"; }
   show(parseInt(location.hash.slice(1), 10) - 1 || 0);
 })();
 </script>
